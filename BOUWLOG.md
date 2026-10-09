@@ -140,7 +140,7 @@ Els stuurde vijf lijsten: Thema 4 taak 4, Thema 5 taak 1–4. Samen 123 woorden.
 
 ## 2026-10-09 (avond) — Review fabel, en wat ermee gedaan is
 
-Samenvatting van fabels review. fabel mag dit vervangen door haar eigen tekst.
+Samenvatting van fabels review. fabel mag dit vervangen door zijn eigen tekst.
 
 1. **Koerswijziging** (A2–B1, plaatjes als bijzaak, import vóór publicatie): akkoord.
    De bouwbrief is al naar A2–B1 gezet (v2). Aanvulling voor de brief: "beeld waar concreet,
@@ -405,7 +405,7 @@ Afgevinkt in het testplan.
 
 ## 2026-10-10 — Review fabel op de gebouwde Wedstrijd, verwerkt
 
-fabel kon niet live spelen (haar container mag niet naar github.io), dus las ze de code. Oordeel: bouw klopt
+fabel kon niet live spelen (zijn container mag niet naar github.io), dus las hij de code. Oordeel: bouw klopt
 met het ontwerp. Drie fixes, alle drie overgenomen:
 
 1. **De kandidatenlade toonde scores**, en die lade staat op het digibord. Wie hem opent om een spooktelefoon
@@ -494,3 +494,10 @@ tonen verandert het plan niet meer.
   applicatielogging bijgekomen.
 
 Service worker naar `v14`.
+
+
+## 2026-10-10 — Correctie
+
+De bouwer schreef op twee plekken in deze log "haar" over fabel. Dat was een aanname: fabel is "hij"
+(via Marieke). Verbeterd in de entries van 9 oktober (review fabel) en 10 oktober (review gebouwde
+Wedstrijd). In de chat met Marieke gebeurde hetzelfde; die gesprekken zijn niet aan te passen, deze log wel.
