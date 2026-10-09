@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jeetjemineetje-relay",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  // Privacy: no logs, no traces. Cloudflare turns observability on by default.
+  "observability": { "enabled": false, "logs": { "enabled": false, "invocation_logs": false }, "traces": { "enabled": false } },
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "ratelimits": [
+    { "name": "CREATE_LIMIT", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
+    { "name": "JOIN_LIMIT", "namespace_id": "1002", "simple": { "limit": 60, "period": 10 } }
+  ]
+}
