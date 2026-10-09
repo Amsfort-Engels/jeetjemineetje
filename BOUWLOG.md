@@ -437,7 +437,8 @@ per locatie en met vertraging telt, dus een salvo komt erdoor. Niet verkeerd ing
 coördinerend object met een hard budget van 30 rooms per uur (in het geheugen; reset bij herstart).
 Live getest: na 30 rooms → 429. Daarna opnieuw gedeployd om het budget voor Marieke te resetten.
 **Niet gedaan:** Astra's voorstel voor een docentcode bij het aanmaken van rooms. Dat is extra drempel
-voor Els. Eerst kijken of het budget genoeg is. **Beslissing voor Marieke.**
+voor Els. Eerst kijken of het budget genoeg is. **Besluit Marieke (10 oktober): voorlopig geen docentcode.**
+Pas toevoegen als er misbruik blijkt.
 
 **Deploy-controle (Astra):** `wrangler deploy` toont alleen de bindings ROOMS, BUDGET, CREATE_LIMIT en
 JOIN_LIMIT, geen `LOCAL_TESTS`. `.dev.vars` wordt niet meegestuurd.
