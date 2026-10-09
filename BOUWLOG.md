@@ -402,3 +402,17 @@ Als het daar toch gebeurt: de studio een eigen adres buiten het bereik van de ap
 
 **Cloudflare-dashboard gecontroleerd door Marieke:** Logs en Traces staan uit voor `jeetjemineetje-relay`.
 Afgevinkt in het testplan.
+
+## 2026-10-10 — Review fabel op de gebouwde Wedstrijd, verwerkt
+
+fabel kon niet live spelen (haar container mag niet naar github.io), dus las ze de code. Oordeel: bouw klopt
+met het ontwerp. Drie fixes, alle drie overgenomen:
+
+1. **De kandidatenlade toonde scores**, en die lade staat op het digibord. Wie hem opent om een spooktelefoon
+   te verwijderen, projecteert de hele ranglijst, onderkant inbegrepen. Scores eruit; de lade toont nu alleen
+   naam, "offline" of "wacht".
+2. **Slimme, Sterke en Handige zijn kunnen-woorden**, en het ontwerp verbood die as, niet alleen de negatieve
+   kant: "Slimme Shoarma" op de laatste plaats is ironie. Vervangen door **Stoere, Zonnige, Deftige**.
+3. **Troosttitel bij "niets gemeten"** rouleert nu: *Mysterieuze kandidaat*, *Geheim wapen* of *Pokerface*.
+
+Relay-tests: 17 groen. Relay opnieuw gedeployd. Service worker naar `v11`.

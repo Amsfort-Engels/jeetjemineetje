@@ -1,15 +1,16 @@
 // Name pool for candidates: adjective + something tasty, inflected correctly
 // (no article, so the indefinite form: Koele Kroket, Prachtig Poffertje).
-// Rules (ONTWERP-WEDSTRIJD.md): only positive or neutral traits, speed only
-// "snel", nothing about looks or ability, no alcohol.
+// Rules (ONTWERP-WEDSTRIJD.md): only positive or neutral character traits,
+// speed only "snel", nothing about looks or ability (so no "slim", "sterk",
+// "handig": ironic the moment that name finishes last), no alcohol.
 
 const ADJECTIVES = [
   // [de-form, het-form]
   ['Dappere', 'Dapper'], ['Koele', 'Koel'], ['Pittige', 'Pittig'], ['Snelle', 'Snel'],
-  ['Brave', 'Braaf'], ['Handige', 'Handig'], ['Felle', 'Fel'], ['Opgewekte', 'Opgewekt'],
+  ['Brave', 'Braaf'], ['Stoere', 'Stoer'], ['Felle', 'Fel'], ['Opgewekte', 'Opgewekt'],
   ['Toffe', 'Tof'], ['Prachtige', 'Prachtig'], ['Kalme', 'Kalm'], ['Lieve', 'Lief'],
-  ['Gekke', 'Gek'], ['Zachte', 'Zacht'], ['Fijne', 'Fijn'], ['Sterke', 'Sterk'],
-  ['Blije', 'Blij'], ['Rustige', 'Rustig'], ['Vrolijke', 'Vrolijk'], ['Slimme', 'Slim'],
+  ['Gekke', 'Gek'], ['Zachte', 'Zacht'], ['Fijne', 'Fijn'], ['Zonnige', 'Zonnig'],
+  ['Blije', 'Blij'], ['Rustige', 'Rustig'], ['Vrolijke', 'Vrolijk'], ['Deftige', 'Deftig'],
 ];
 
 const FOODS = [

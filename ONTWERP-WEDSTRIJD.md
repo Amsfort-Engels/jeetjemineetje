@@ -41,9 +41,9 @@ De leerling scant de QR-code, of opent de app → **Meedoen** → typt `KAAS`. D
 geeft een naam: **bijvoeglijk naamwoord + iets lekkers**, met allitteratie waar het kan.
 
 > **Dappere Drop** · **Koele Kroket** · **Pittige Pindakaas** · **Snelle Stroopwafel** ·
-> **Brave Bitterbal** · **Handige Hagelslag** · **Felle Frikandel** (halal, geverifieerd door Marieke) ·
+> **Brave Bitterbal** · **Stoere Hagelslag** · **Felle Frikandel** (halal, geverifieerd door Marieke) ·
 > **Opgewekte Oliebol** · **Toffe Tompoes** · **Prachtig Poffertje** · **Kalme Kaasbaas** ·
-> **Lieve Limonade** · **Gekke Gouda** · **Zachte Zoute Drop** · **Fijne Falafel** · **Sterke Shoarma** ·
+> **Lieve Limonade** · **Gekke Gouda** · **Zachte Zoute Drop** · **Fijne Falafel** · **Deftige Shoarma** ·
 > **Blije Baklava** · **Rustige Roti**
 >
 > ~~Dikke Dropkoning~~ ❌ uiterlijk · ~~Trage Tompoes~~ ❌ traag, in een snelheidsspel · ~~Blij Biertje~~ ❌ alcohol
@@ -56,7 +56,8 @@ Spelregels voor namen:
 - **Geen vrije invoer.** Geen eigen namen, dus ook geen grove namen of echte namen op het bord.
 - Bijvoeglijke naamwoorden **alleen positief of neutraal**, nooit over uiterlijk of kunnen.
   **Tempo alleen "snel"**: een traagheidsnaam in een snelheidsspel is een wond, geen grap.
-  Dus wel "dapper", "snel", "kalm", "gek". Niet "dik", "dom", "traag", "lelijk".
+  Dus wel "dapper", "snel", "kalm", "gek". Niet "dik", "dom", "traag", "lelijk", en ook niet
+  positieve kunnen-woorden als "slim", "sterk", "handig": die worden ironisch zodra die naam onderaan eindigt.
 - **Geen alcohol** in de namen (en geen geweld, dood of familie, zoals overal).
 - Let op de buiging: *de*-woorden krijgen -e (Koele Kroket), *het*-woorden niet (Prachtig Poffertje).
   Namen hebben geen lidwoord, dus de onbepaalde vorm: *Prachtig Poffertje*, zoals in *een prachtig poffertje*.
@@ -146,7 +147,8 @@ De laatste vraag telt **dubbel**. Het bord kondigt het aan met tromgeroffel:
   - **Sterke start**: de meeste goed in de eerste helft
   - **IJzeren zenuwen**: goed bij de Gouden Klomp
   - **Doorzetter**: alle vragen beantwoord
-  - **Mysterieuze kandidaat**: niets bijzonders gemeten, dus dat is ook een titel
+  - **Mysterieuze kandidaat**, **Geheim wapen** of **Pokerface** (willekeurig): niets bijzonders gemeten,
+    dus dat is ook een titel
 - **Let op na de pilot:** vaste troosttitels worden na een paar keer ontcijferd ("Doorzetter = je hebt verloren").
   Rooms onthouden niets, dus de app kan niemand bewust twee keer dezelfde troosttitel geven. Toch: één vraag
   hierover op het exit-ticket.

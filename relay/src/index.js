@@ -638,7 +638,8 @@ export class Room extends DurableObject {
       if (out.has(p.id)) continue;
       if (last?.double && last.results.get(p.id)) out.set(p.id, 'IJzeren zenuwen');
       else if (played.length && played.every(h => p.answers.has(h.qid))) out.set(p.id, 'Doorzetter');
-      else out.set(p.id, 'Mysterieuze kandidaat');
+      // Nothing measured: a small rotating pool, so it becomes a running joke, not a diagnosis.
+      else out.set(p.id, ['Mysterieuze kandidaat', 'Geheim wapen', 'Pokerface'][Math.floor(Math.random() * 3)]);
     }
     return out;
   }

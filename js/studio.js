@@ -465,7 +465,8 @@ function drawer() {
       h('input', { type: 'checkbox', checked: tribune.toelatingOpen, onchange: e => conn.send({ t: 'toelating', open: e.target.checked }) }),
       ' Nieuwe kandidaten mogen binnenkomen'),
     h('ul', { class: 'drawer-lijst' }, tribune.kandidaten.map(k => h('li', { class: k.verbonden ? '' : 'offline' },
-      `${k.emoji} ${k.naam}`, k.toegelaten ? ` · ${k.score}` : ' · wacht',
+      // No scores here: the drawer is projected on the board too (review fabel).
+      `${k.emoji} ${k.naam}`, k.toegelaten ? (k.verbonden ? '' : ' · offline') : ' · wacht',
       !k.toegelaten ? h('button', { type: 'button', onclick: () => conn.send({ t: 'toelaten', id: k.id }) }, 'Toelaten') : null,
       // Linking: a waiting phone that is really someone who dropped out.
       !k.toegelaten && offline.length ? h('select', { 'aria-label': 'Is eigenlijk…', onchange: e => {
