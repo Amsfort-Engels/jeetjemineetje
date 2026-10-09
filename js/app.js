@@ -117,7 +117,7 @@ function questionType(word) {
 // Three other words from the theme, preferring the same kind (noun or not).
 function otherWords(word, pool, n = 3) {
   const isNoun = w => !!w.lidwoord;
-  const others = leitner.shuffle(pool.filter(w => w.woord !== word.woord));
+  const others = leitner.shuffle(pool.filter(w => w.woord !== word.woord && !word.nietAfleider.includes(w.woord)));
   const same = others.filter(w => isNoun(w) === isNoun(word));
   const picked = [...same, ...others.filter(w => !same.includes(w))].slice(0, n);
   return leitner.shuffle([word, ...picked]);
@@ -259,7 +259,8 @@ function feedback(state, word, correct, almost = false) {
 
   const z = splitZin(word.zin);
   const panel = h('div', { class: `paneel ${correct ? 'goed' : 'fout'}` },
-    h('p', { class: 'uitroep' }, uitroep(soort)),
+    // The class wants to learn to *say* these ("Nee, sjonge. Met een o."), so they get a 🔊 too.
+    (u => h('p', { class: 'uitroep' }, u, speakButton(u, 'Luister naar de uitroep')))(uitroep(soort)),
     h('p', { class: 'antwoord' }, word.beeld ? beeld(word, 'klein') : null,
       h('b', {}, metLidwoord(word)), speakButton(metLidwoord(word))),
     z ? h('p', { class: 'zin' }, zinMetGat(word, z.gat), speakButton(plainZin(word.zin), 'Luister naar de zin')) : null,

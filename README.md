@@ -10,7 +10,7 @@ Keuzes en afwijkingen staan in [BOUWLOG.md](BOUWLOG.md).
 ## Stand
 
 - **Oefenen** (solo, offline): werkt, met de vijf woordenlijsten van Els.
-  Voorbeeldzinnen alleen nog voor Thema 5, taak 2 (proef, wacht op oordeel van Els).
+  Alle 123 woorden hebben een voorbeeldzin.
 - **Wedstrijd** (live in de klas): nog niet gebouwd.
 
 ## Lokaal draaien
@@ -34,7 +34,9 @@ naamwoorden als `afslag, de` of `de praktijk`. De bestandsnaam is de themanaam.
 3. Dat schrijft `data/woorden.csv`, en dat bestand wordt wel gecommit.
 
 Voorbeeldzinnen en plaatjes staan niet in Els' bestanden maar in `data/aanvulling.csv`
-(`woord;voorbeeldzin;afbeelding`), beheerd door ons en gecontroleerd door Els. Het geoefende
+(`woord;voorbeeldzin;afbeelding;niet_als_afleider`), beheerd door ons en gecontroleerd door Els.
+`niet_als_afleider` is voor bijna-synoniemen die ook in de zin passen (*premie/zorgpremie*): die worden
+bij dat woord nooit als foute optie aangeboden. Het geoefende
 woord staat in de zin tussen [haken]: `Neem op de rotonde de tweede [afslag].`
 
 Foute spellingen voor de spelvraag staan in `data/spelfouten.csv` (`woord;fouten`, gescheiden door `|`).

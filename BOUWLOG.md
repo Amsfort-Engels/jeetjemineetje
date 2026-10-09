@@ -260,3 +260,29 @@ Testplan van Astra staat in het ontwerp als afvinklijst.
 
 Ook aangepast: het sarvoorbeeld werd *"7 mensen kozen slagen… maar het was zakken!"*. *Zaken* staat
 inmiddels niet meer in de spelfouten, en *slagen/zakken* is een mooier verwarbaar paar.
+
+## 2026-10-09 (avond) — Els is akkoord, alle zinnen geschreven
+
+**Els over de proefzinnen:** "Ja die zijn prima." Ze test dinsdag met de klas.
+
+**Els over de uitroepen:** de klas vindt "sjonge jonge" zó grappig dat ze het zelf wilden leren zeggen
+("Sjoenge sjoenge joenge." "Nee, sjonge. Met een o."). Nu zeggen ze het elke keer als Els zucht.
+
+### Gedaan
+
+- **Zinnen voor de overige 99 woorden.** Alle 123 hebben er nu een. Zelfde regels: precies één woord uit
+  de lijst past, lidwoord buiten de haken, A2-zinsbouw om het B1-woord heen, in de context van het thema.
+  - *uiterlijk* staat in Els' lijst zonder lidwoord, dus als bijwoord: "Je moet je [uiterlijk] 1 mei aanmelden".
+    In de context opleiding/aanmelden is dat waarschijnlijk de bedoelde betekenis. **Els: klopt dat?**
+  - Gevoelige woorden, neutraal gehouden: *vaderland* (over een fictieve Li uit China, passend bij het
+    thema), *volkslied* (het Wilhelmus), *echtpaar* (een definitie), *slaappil* (een vraag).
+    **Els mag deze altijd vervangen.**
+  - Eén knipoog naar de klas: *uitspraak* → "Ik zeg 'sjoenge' in plaats van 'sjonge'."
+- **Kolom `niet_als_afleider`.** Bij bijna-synoniemen kun je met geen zin voorkomen dat beide passen:
+  waar *zorgverzekeraar* past, past *verzekeraar* ook. Voor die gevallen (premie/zorgpremie,
+  verzekeraar/zorgverzekeraar, scholier/mbo'er) wordt het synoniem nooit als foute optie aangeboden.
+  Dit is de per-zin blocklist die fabel noemde, maar alleen waar zinnen het echt niet kunnen oplossen.
+- **🔊 bij de uitroep** in de feedback. De klas wil ze leren uitspreken.
+- Service worker naar `v5`.
+- Getest: 60 rondes over alle lijsten. Alle vraagvormen werken. In 66 vragen waar het ertoe deed,
+  kwam het synoniem van het goede antwoord nooit voor als optie.

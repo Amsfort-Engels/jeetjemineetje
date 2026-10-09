@@ -32,6 +32,7 @@ export function rowsToWords(rows) {
   const idx = {
     thema: col('thema'), woord: col('woord'), lidwoord: col('lidwoord'),
     zin: col('voorbeeldzin'), beeld: col('afbeelding'), fouten: col('spelfouten'),
+    niet: col('niet_als_afleider'),
   };
   const get = (r, i) => (i >= 0 && r[i] ? r[i].trim() : '');
 
@@ -44,6 +45,8 @@ export function rowsToWords(rows) {
       beeld: get(r, idx.beeld),
       // Reviewed wrong spellings, from data/spelfouten.csv via the importer.
       spelfouten: get(r, idx.fouten).split('|').filter(Boolean),
+      // Near-synonyms that would also fit this word's sentence: never a wrong option.
+      nietAfleider: get(r, idx.niet).split('|').filter(Boolean),
     }))
     .filter(w => w.thema && w.woord)
     .map(w => ({ ...w, id: `${w.thema}::${w.woord}` }));
