@@ -287,16 +287,18 @@ Wrangler (de Cloudflare-CLI) heeft Node nodig, en die staat niet op deze Mac. Vo
 - [ ] Telefoonklok verzet (mag niets uitmaken)
 - [ ] Lobby overspoelen met verbindingen
 - [ ] Logging staat echt uit (dashboard gecontroleerd)
+- [ ] Eén telefoon op de school-wifi verbindt met de relay (WebSockets komen door)
 
 ---
 
 ## Open vragen
 
-**Voor Els:**
-1. Kan het digibord geluid afspelen, hard genoeg voor de hele klas?
-2. Laat de school-wifi WebSockets door? (Testen kan met één telefoon, vóór de eerste les.)
-3. Top 5 op het bord en de rest alleen op de eigen telefoon: goed zo? Of liever alleen het podium?
-4. Mogen de leerlingen hun telefoon in de les gebruiken, of moet dat apart geregeld worden?
+**Voor Els** (antwoorden 9 oktober):
+1. ~~Kan het digibord geluid afspelen?~~ **Ja.**
+2. Laat de school-wifi WebSockets door? Els: **ja**, de wifi werkt. Of live verbindingen erdoor komen,
+   blijkt pas uit een test met één telefoon in het lokaal. **Staat op het testplan.**
+3. ~~Top 5 of alleen het podium?~~ **Top 5.**
+4. Mogen de leerlingen hun telefoon in de les gebruiken? (nog open, waarschijnlijk ja: ze testen dinsdag)
 
 **Voor fabel:**
 - De privacyzin in de bouwbrief, aangepast aan de nieuwe belofte (zie hierboven).

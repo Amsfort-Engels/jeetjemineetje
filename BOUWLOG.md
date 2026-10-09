@@ -286,3 +286,8 @@ inmiddels niet meer in de spelfouten, en *slagen/zakken* is een mooier verwarbaa
 - Service worker naar `v5`.
 - Getest: 60 rondes over alle lijsten. Alle vraagvormen werken. In 66 vragen waar het ertoe deed,
   kwam het synoniem van het goede antwoord nooit voor als optie.
+
+### Antwoorden Els op de Wedstrijd-vragen
+
+Digibord speelt geluid af: **ja**. School-wifi: **ja** (WebSockets nog testen in het lokaal, staat op het
+testplan). Scorebord: **top 5**. Over de uitroepen: "Hahahaha zó grappig."
