@@ -366,3 +366,26 @@ Marieke eenmalig inloggen bij Cloudflare (zie onder).
   per seconde) zitten in de relay zelf en werken wel. Gevolg: iemand zou veel lege rooms kunnen aanmaken.
   Geen privacyrisico en geen kosten op het gratis plan, maar wel een gat. **Astra: graag meedenken.**
 - **Nog doen:** logging-instellingen controleren in het Cloudflare-dashboard (testplan Astra).
+
+## 2026-10-10 — Eerste echte potje, en geen geluid op de MacBook
+
+**Test Marieke + partner:** een heel potje gespeeld, op MacBook (studio) en telefoons. "Totaal zelfverklarend."
+**Probleem:** geen geluid uit de MacBook in de studio. Op de telefoon (Oefenen) werkte het geluid wel.
+De Mac heeft wel Nederlandse stemmen (Xander nl-NL, Ellen nl-BE).
+
+Waarschijnlijke oorzaken, allebei in onze code:
+1. Safari (en soms Chrome) staan spraak pas toe als de pagina één keer heeft gesproken **direct in reactie
+   op een klik**. In Oefenen volgt het eerste woord op een tik. In de studio komt het eerste woord binnen
+   via de relay, niet via een klik, dus de browser blokkeert het zonder melding. Het vangnet-timer liet
+   het spel gewoon doorgaan, waardoor het stil bleef zonder dat iemand het merkte.
+2. Chrome op macOS slikt soms een uitspraak die in hetzelfde moment als `cancel()` wordt aangeboden.
+   `speak()` deed dat elke keer.
+
+Opgelost:
+- De studio spreekt bij **Open de studio** ("Welkom in de studio!") en bij **Start** ("Daar gaan we!"),
+  binnen de klik. Dat ontgrendelt spraak voor de rest van het spel.
+- Knop **🔊 Test het geluid** op het startscherm van de studio, met de naam van de gebruikte stem.
+- `speak()`: alleen `cancel()` als er iets speelt, en dan 80 ms wachten. Ook `resume()` vóór elke uitspraak.
+- Service worker naar `v10`.
+
+**Nog niet bevestigd:** de preview-browser van de bouwer speelt geen geluid af. Marieke test opnieuw op de MacBook.

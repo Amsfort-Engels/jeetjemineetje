@@ -73,6 +73,7 @@
 .studio-setup h1 { font-size: 2.6rem; font-weight: 900; }
 .studio-sub { color: var(--blauw); }
 .studio-setup fieldset { border: 2px solid var(--lijn); border-radius: 16px; padding: 12px 20px; margin: 0 0 16px; }
+.geluidstest small { color: var(--inkt-zacht); }
 .thema-keuze { display: block; padding: 6px 0; font-size: 1.1rem; }
 .studio-setup select { font: inherit; padding: 8px 12px; border-radius: 10px; border: 2px solid var(--lijn); background: var(--kaart); color: var(--inkt); }
 .knop.groot { font-size: 1.3em; padding: 16px 28px; }

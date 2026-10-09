@@ -7,7 +7,7 @@
 import { loadWords, groupByTheme, splitZin, plainZin } from './data.js';
 import { shuffle } from './leitner.js';
 import { otherWords } from './vragen.js';
-import { initSpeech, hasDutchVoice, speak } from './speech.js';
+import { initSpeech, hasDutchVoice, speak, voiceName } from './speech.js';
 import { RELAY } from './config.js';
 import { Verbinding } from './verbinding.js';
 import qrcode from './vendor/qrcode.mjs';
@@ -69,12 +69,18 @@ function setupScherm() {
     [8, 10, 12].map(n => h('option', { value: n, selected: n === 10 }, `${n} vragen`)));
   show(h('main', { class: 'studio-setup' },
     h('h1', {}, 'Jeetje Mineetje', h('span', { class: 'studio-sub' }, ' · de Wedstrijd')),
-    hasDutchVoice() ? null : h('p', { class: 'melding' },
-      '🔇 Dit bord heeft geen Nederlandse stem. De wedstrijd gebruikt dan alleen zinnen, geen luistervragen.'),
+    hasDutchVoice()
+      ? h('p', { class: 'geluidstest' },
+          h('button', { class: 'knop rustig', type: 'button', onclick: () => speak('Jeetje mineetje! Het geluid werkt.') }, '🔊 Test het geluid'),
+          h('small', {}, ` Stem: ${voiceName()}. Hoor je niets? Kijk of het geluid van het bord aan staat.`))
+      : h('p', { class: 'melding' },
+          '🔇 Dit bord heeft geen Nederlandse stem. De wedstrijd gebruikt dan alleen zinnen, geen luistervragen.'),
     h('form', { onsubmit: e => {
       e.preventDefault();
       const gekozen = [...e.currentTarget.querySelectorAll('input[name=thema]:checked')].map(x => x.value);
       if (!gekozen.length) return;
+      // Spoken inside the click, so the browser allows speech for the rest of the game.
+      speak('Welkom in de studio!');
       openStudio(gekozen, Number(aantal.value));
     } },
       h('fieldset', {}, h('legend', {}, 'Welke thema\'s?'), checks),
@@ -232,6 +238,7 @@ function lobbyScherm() {
 }
 
 function startSpel() {
+  speak('Daar gaan we!');   // inside the click: keeps speech unlocked after a reload
   conn.send({ t: 'start', aantal: game.plan.length });
   game.gestart = true;
   game.i = -1;

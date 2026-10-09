@@ -33,13 +33,29 @@ export function hasDutchVoice() {
   return voice !== null;
 }
 
+export function voiceName() {
+  return voice ? `${voice.name} (${voice.lang})` : null;
+}
+
+// Two browser quirks handled here:
+// - Chrome on macOS can swallow an utterance that is queued in the same
+//   instant as cancel(), so after a cancel we wait a moment.
+// - Safari (and sometimes Chrome) only allows speech after the page has
+//   spoken once in direct response to a click. Callers that start the
+//   studio call speak() inside a click handler to unlock it; that call
+//   must stay synchronous, which it is when nothing is playing yet.
 export function speak(text, { rate = 0.85, onEnd } = {}) {
   if (!voice) { onEnd?.(); return; }
-  speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.voice = voice;
   u.lang = voice.lang;
   u.rate = rate;
   if (onEnd) { u.onend = onEnd; u.onerror = onEnd; }
-  speechSynthesis.speak(u);
+  const go = () => { speechSynthesis.resume(); speechSynthesis.speak(u); };
+  if (speechSynthesis.speaking || speechSynthesis.pending) {
+    speechSynthesis.cancel();
+    setTimeout(go, 80);
+  } else {
+    go();
+  }
 }
