@@ -241,3 +241,22 @@ Belangrijkste keuzes:
 - Uitzondering voor gaming-Engels ("on fire! 🔥") staat nu expliciet in de regels.
 - Na de pilot: één exit-ticketvraag over of de troosttitels als "verloren" gelezen worden.
 - fabels slotobservatie: er kwam live multiplayer bij, maar niets wat bewaard wordt.
+
+### Review Astra op het Wedstrijd-ontwerp — verwerkt
+
+Zeven bevindingen, allemaal overgenomen. Het ontwerp beloofde meer herstel en privacy dan het kon waarmaken.
+
+| # | Bevinding | Besluit |
+|---|---|---|
+| 1 (P1) | "Alleen geheugen" overleeft geen herstart van het Durable Object. | Gewone WebSockets, geen hibernation. **Een herstart beëindigt het spel, met een eerlijke melding.** Herstel via een momentopname op de laptop eventueel later. |
+| 2 (P1) | "Geen Storage-API" is niet "niets bewaard": Cloudflare logt standaard. | Logging en tracing uit, nooit spelgegevens loggen, tokens niet in URL's. **Nauwere belofte:** "de app bewaart geen spelgegevens na het spel; de hostingpartij verwerkt het verkeer." De bouwbrief moet mee. |
+| 3 (P1) | Geen aparte docentrechten, geen volledige spelstatus. | Docenttoken (de roomcode geeft geen rechten), spelerstokens, rolcontrole bij elk bericht. De relay is scheidsrechter: houdt de stand en de klok bij. Telefoons sturen alleen keuzes. |
+| 4 (P1) | Reconnect zonder bevestiging, ontdubbeling of spel-id. | Alle regels van Astra overgenomen. Plus: Els kan een nieuwe telefoon koppelen aan een offline naam. |
+| 5 | Studio sluiten is geen betrouwbaar einde. | Stoppen is het einde. Wegvallen = pauze, 3 minuten grace, de lopende vraag vervalt. Aparte verlooptijden (30 min docent-inactief, 3 uur maximaal). |
+| 6 | 60 losse woorden zijn te raden. | Code wordt `BLAUWE FIETS 47` (±180.000 combinaties), een adres en geen wachtwoord. **Els laat kandidaten toe.** Limieten, maximaal 30 kandidaten. Laatkomers alleen als Els de toelating opent. |
+| 7 | Snelheid gemeten op de telefoon is niet te vertrouwen. | **Geen snelheidsbonus in de pilot.** De relay is de enige klok. Het antwoordvenster opent pas als het geluid klaar is. Herhalen schuift de deadline niet op. |
+
+Testplan van Astra staat in het ontwerp als afvinklijst.
+
+Ook aangepast: het sarvoorbeeld werd *"7 mensen kozen slagen… maar het was zakken!"*. *Zaken* staat
+inmiddels niet meer in de spelfouten, en *slagen/zakken* is een mooier verwarbaar paar.
