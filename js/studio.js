@@ -121,6 +121,25 @@ function maakPlan(gekozen, aantal) {
   });
 }
 
+// ---------- saving progress (review Astra #2) ----------
+
+// The exact plan and position, so a reload carries on with the same quiz
+// instead of a fresh random one. sessionStorage: this tab only, gone when closed.
+function bewaar() {
+  if (!room || !game) return;
+  const plan = game.plan.map(v => ({
+    id: v.word.id, vorm: v.vorm, opties: v.opties, herkansing: v.herkansing,
+    eerder: v.eerder, qid: v.qid, pct: v.pct,
+  }));
+  try { sessionStorage.setItem(KEY, JSON.stringify({ room, plan, i: game.i, laatste: game.laatste })); } catch {}
+}
+
+function herstel(saved) {
+  const byId = new Map([...themes.values()].flat().map(w => [w.id, w]));
+  const plan = saved.plan.map(v => ({ ...v, word: byId.get(v.id) })).filter(v => v.word);
+  return { plan, i: saved.i, geluid: true, gestart: false, laatste: saved.laatste, pending: null };
+}
+
 // ---------- the room ----------
 
 async function openStudio(gekozen, aantal) {
@@ -133,8 +152,8 @@ async function openStudio(gekozen, aantal) {
   }
   if (!res.ok) return foutScherm('De wedstrijdserver doet het even niet. Probeer het zo nog eens.');
   room = await res.json();
-  game = { plan: maakPlan(gekozen, aantal), i: -1, aantal, geluid: true, gestart: false, laatste: null };
-  try { sessionStorage.setItem(KEY, JSON.stringify({ room, gekozen, aantal })); } catch {}
+  game = { plan: maakPlan(gekozen, aantal), i: -1, geluid: true, gestart: false, laatste: null, pending: null };
+  bewaar();
   verbind();
   lobbyScherm();
 }
@@ -151,16 +170,9 @@ function verbind() {
 
 function onMessage(m) {
   switch (m.t) {
-    case 'welkom-studio': return;
+    case 'welkom-studio': return verzoen(m);
     case 'tribune':
       tribune = m;
-      // After a reload mid-game the relay is past the lobby: carry on instead of showing Start.
-      if (screen === 'lobby' && m.fase !== 'lobby' && game && !game.gestart) {
-        game.gestart = true;
-        if (m.fase === 'paused') return pauzeScherm('studio-weg');
-        if (m.fase === 'final') return foutScherm('Deze wedstrijd is al afgelopen.');
-        return volgendeKnopScherm();
-      }
       if (screen === 'lobby') lobbyScherm();
       else if (drawerOpen) { const d = document.querySelector('.drawer'); if (d) d.replaceWith(drawer()); }
       return;
@@ -175,13 +187,13 @@ function onMessage(m) {
     case 'uitslag': return uitslag(m);
     case 'vervallen':
       toast('Deze vraag telt niet: de verbinding viel weg.');
-      if (game) game.vervallen = true;
+      markeerVervallen(m.qid);
       return;
     case 'fase':
       if (m.fase === 'paused') return pauzeScherm(m.reden);
       if (m.fase === 'reveal' && screen === 'pauze') {
         // Back from a pause. A void question is asked again.
-        if (game.vervallen && game.i >= 0) { game.vervallen = false; game.i--; }
+        if (game.vervallen && game.i >= 0) { game.vervallen = false; game.i--; bewaar(); }
         return volgendeKnopScherm();
       }
       if (m.fase === 'lobby' && screen === 'pauze') return lobbyScherm();
@@ -202,6 +214,26 @@ function onMessage(m) {
 }
 
 // ---------- lobby ----------
+
+// A voided question is asked again, but only if it was the one we had committed to.
+function markeerVervallen(qid) {
+  if (!game) return;
+  if (game.pending?.qid === qid) game.pending = null;
+  if (game.plan[game.i]?.qid === qid) game.vervallen = true;
+}
+
+// After (re)connecting: the relay says where the game really is (review Astra #2).
+function verzoen(m) {
+  if (!game) return;
+  game.pending = null;
+  clearTimeout(game.pendingTimer);
+  if (m.vraag?.vervallen) markeerVervallen(m.vraag.qid);
+  if (!m.gestart) { if (screen !== 'lobby') lobbyScherm(); return; }
+  game.gestart = true;
+  if (m.fase === 'final') return;                 // the relay sends the finale right after this
+  if (m.fase === 'paused') return pauzeScherm('studio-weg');
+  if (screen === 'lobby' || screen === 'verbinden' || screen === 'vraag' || screen === 'klomp') return volgendeKnopScherm();
+}
 
 function lobbyScherm() {
   screen = 'lobby';
@@ -238,21 +270,28 @@ function lobbyScherm() {
 }
 
 function startSpel() {
+  if (game.gestart) return;
   speak('Daar gaan we!');   // inside the click: keeps speech unlocked after a reload
-  conn.send({ t: 'start', aantal: game.plan.length });
+  if (!conn.send({ t: 'start', aantal: game.plan.length })) return toast('Geen verbinding. Probeer het zo nog eens.');
   game.gestart = true;
   game.i = -1;
+  bewaar();
   volgendeVraag();
 }
 
 // ---------- a question ----------
 
+// Only one step forward at a time (review Astra #1): the index moves only when
+// the relay confirms the question, and a second click does nothing.
 async function volgendeVraag() {
-  game.i++;
-  if (game.i >= game.plan.length) return conn.send({ t: 'afronden' });
-  const v = game.plan[game.i];
-  v.qid = `q${game.i + 1}${v.herkansing ? 'h' : ''}-${Math.random().toString(36).slice(2, 7)}`;
-  v.dubbel = game.i === game.plan.length - 1;
+  if (!game || game.pending) return;
+  const next = game.i + 1;
+  if (next >= game.plan.length) return afronden();
+  const v = game.plan[next];
+  v.qid = `q${next + 1}${v.herkansing ? 'h' : ''}-${Math.random().toString(36).slice(2, 7)}`;
+  v.dubbel = next === game.plan.length - 1;
+  game.pending = { qid: v.qid, index: next };
+  document.querySelectorAll('.studio-knoppen button, .studio-midden button').forEach(b => { b.disabled = true; });
 
   if (v.dubbel) {
     screen = 'klomp';
@@ -264,15 +303,37 @@ async function volgendeVraag() {
     await say('Laatste vraag! Voor de gouden klomp!');
     await wait(1500);
   }
-  conn.send({
+  if (game.pending?.qid !== v.qid) return;   // a reconnect cleared it meanwhile
+  const sent = conn.send({
     t: 'vraag', qid: v.qid, knoppen: v.opties.map(o => o.label), goed: v.opties.findIndex(o => o.goed),
     dubbel: v.dubbel, vorm: v.vorm, herkansing: v.herkansing,
   });
+  if (!sent) return mislukt('Geen verbinding. Probeer het zo nog eens.');
+  // The relay can refuse (wrong phase): don't wait forever.
+  clearTimeout(game.pendingTimer);
+  game.pendingTimer = setTimeout(() => { if (game.pending?.qid === v.qid) mislukt('De vraag kwam niet aan. Probeer het nog eens.'); }, 6000);
+}
+
+function mislukt(tekst) {
+  game.pending = null;
+  clearTimeout(game.pendingTimer);
+  toast(tekst);
+  volgendeKnopScherm();
+}
+
+function afronden() {
+  if (game.afronden) return;
+  if (!conn.send({ t: 'afronden' })) return toast('Geen verbinding. Probeer het zo nog eens.');
+  game.afronden = true;
 }
 
 async function vraagKlaar(qid) {
+  if (!game.pending || game.pending.qid !== qid) return;
+  game.i = game.pending.index;   // the relay confirmed: now the step counts
+  game.pending = null;
+  clearTimeout(game.pendingTimer);
+  bewaar();
   const v = game.plan[game.i];
-  if (!v || v.qid !== qid) return;
   screen = 'vraag';
   vraagScherm(v, false);
   // Sound first; the answer window only opens once it's done.
@@ -336,6 +397,7 @@ function uitslag(m) {
       game.plan.splice(pos, 0, retry);
     }
   }
+  bewaar();
 
   let moment;
   if (m.aantalGoed === 0 && m.totaal > 0) {
@@ -373,7 +435,7 @@ function uitslag(m) {
     moment,
     top5(m.top5),
     h('div', { class: 'studio-knoppen' },
-      h('button', { class: 'knop groot', type: 'button', onclick: () => isLaatste ? conn.send({ t: 'afronden' }) : volgendeVraag() },
+      h('button', { class: 'knop groot', type: 'button', onclick: e => { e.currentTarget.disabled = true; isLaatste ? afronden() : volgendeVraag(); } },
         isLaatste ? 'Prijsuitreiking! 🏆' : geenUitleg ? 'Uitgelegd! Verder ▶' : 'Volgende vraag ▶')),
   ));
   say(`${lidwoord}${v.word.woord}. ${z ? plainZin(v.word.zin) : ''}`, 9000);
@@ -390,6 +452,7 @@ function top5(rij) {
   if (!rij?.length) return null;
   const vorige = game.laatste || [];
   game.laatste = rij.map(r => r.naam);
+  bewaar();
   return h('ol', { class: 'top5' }, rij.map((r, i) => {
     const was = vorige.indexOf(r.naam);
     const pijl = was === -1 ? '' : was > i ? ' ▲' : was < i ? ' ▼' : '';
@@ -500,11 +563,12 @@ async function main() {
   // A reload during a game: reconnect with the saved teacher token.
   let saved = null;
   try { saved = JSON.parse(sessionStorage.getItem(KEY)); } catch {}
-  if (saved?.room) {
+  if (saved?.room && Array.isArray(saved.plan)) {
     room = saved.room;
-    game = { plan: maakPlan(saved.gekozen, saved.aantal), i: -1, aantal: saved.aantal, geluid: true, gestart: false, laatste: null };
-    verbind();
-    lobbyScherm();
+    game = herstel(saved);
+    screen = 'verbinden';
+    show(h('main', { class: 'studio-midden' }, h('p', { class: 'groot-midden' }, 'Verbinden met je wedstrijd…')));
+    verbind();   // the relay's welcome snapshot decides which screen comes next
     return;
   }
   setupScherm();

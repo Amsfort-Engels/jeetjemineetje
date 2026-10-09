@@ -6,9 +6,9 @@
   // Privacy: no logs, no traces. Cloudflare turns observability on by default.
   "observability": { "enabled": false, "logs": { "enabled": false, "invocation_logs": false }, "traces": { "enabled": false } },
   "durable_objects": {
-    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }, { "name": "BUDGET", "class_name": "Budget" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }, { "tag": "v2", "new_sqlite_classes": ["Budget"] }],
   "ratelimits": [
     { "name": "CREATE_LIMIT", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
     { "name": "JOIN_LIMIT", "namespace_id": "1002", "simple": { "limit": 60, "period": 10 } }

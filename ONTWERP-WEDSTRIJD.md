@@ -253,6 +253,11 @@ Cloudflare kan een Durable Object herstarten (onderhoud, een nieuwe versie). All
 - Maximaal 30 kandidaten, een begrensd aantal wachtende verbindingen, en limieten op het aanmaken van
   rooms, het meedoen en het aantal berichten.
 - Limieten **niet alleen per IP-adres**: anders blokkeert één schoolnetwerk de hele klas.
+- **Roombudget** (na review Astra): één coördinerend object staat maximaal 30 nieuwe rooms per uur toe.
+  De limiter van Cloudflare zelf telt per locatie en met vertraging, en liet 44 rooms achter elkaar door.
+  Het budget staat in het geheugen en begint opnieuw na een herstart of deploy.
+- **Herkomst** (na review Astra): verzoeken van onbekende websites worden geweigerd (403), zowel bij het
+  aanmaken van een room als bij het verbinden. CORS alleen hield het lezen tegen, niet het aanmaken.
 - **Laatkomers** komen alleen binnen als Els de toelating weer opent. (In v1 stond hier nog "altijd". Dat
   was in tegenspraak met de gesloten lobby.)
 

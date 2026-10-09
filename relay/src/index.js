@@ -47,6 +47,12 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(origin) });
 
+    // CORS headers only stop other sites from *reading* a response, not from
+    // sending one (review Astra #8). Browsers always send Origin on these
+    // requests, so refuse unknown browser origins outright. Non-browser
+    // clients send no Origin; they can't be authenticated here anyway.
+    if (origin && !ALLOWED_ORIGINS.includes(origin)) return new Response('niet toegestaan', { status: 403 });
+
     // POST /rooms -> { code, gameId, teacherToken }
     if (url.pathname === '/rooms' && request.method === 'POST') {
       // LOCAL_TESTS only exists in .dev.vars (wrangler dev), never in production.
@@ -54,6 +60,13 @@ export default {
         const ip = request.headers.get('CF-Connecting-IP') || 'onbekend';
         const { success } = await env.CREATE_LIMIT.limit({ key: ip });
         if (!success) return json({ error: 'te-veel' }, 429, origin);
+      }
+      // Cloudflare's limiter is per location and eventually consistent, so a
+      // burst gets through. A single coordinator object keeps a hard budget.
+      // Its counter lives in memory and resets if Cloudflare restarts it.
+      if (env.LOCAL_TESTS !== '1') {
+        const ok = await env.BUDGET.get(env.BUDGET.idFromName('budget')).allow();
+        if (!ok) return json({ error: 'te-veel' }, 429, origin);
       }
       for (let attempt = 0; attempt < 8; attempt++) {
         const code = randomCode();
@@ -81,6 +94,25 @@ export default {
     return new Response('niet gevonden', { status: 404 });
   },
 };
+
+// ---------- room budget ----------
+
+const ROOMS_PER_HOUR = 30;   // one class needs a handful; this only stops floods
+
+export class Budget extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.created = [];   // timestamps, memory only
+  }
+
+  async allow() {
+    const now = Date.now();
+    this.created = this.created.filter(t => now - t < 60 * 60_000);
+    if (this.created.length >= ROOMS_PER_HOUR) return false;
+    this.created.push(now);
+    return true;
+  }
+}
 
 // ---------- helpers ----------
 
@@ -255,7 +287,9 @@ export class Room extends DurableObject {
     if (!g) { send(conn.ws, { t: 'einde', reden: 'weg' }); conn.ws.close(1000, 'geen spel'); return; }
 
     if (msg.role === 'teacher') {
-      if (!isStr(msg.token, 200) || (await hash(msg.token)) !== g.teacherHash) {
+      const tokenOk = isStr(msg.token, 200) && (await hash(msg.token)) === g.teacherHash;
+      if (this.game !== g) { send(conn.ws, { t: 'einde', reden: 'weg' }); conn.ws.close(1000, 'geen spel'); return; }
+      if (!tokenOk) {
         send(conn.ws, { t: 'fout', code: 'token' }); conn.ws.close(1008, 'token'); return;
       }
       if (g.teacherWs) { send(g.teacherWs, { t: 'vervangen' }); try { g.teacherWs.close(1000, 'vervangen'); } catch {} }
@@ -265,7 +299,13 @@ export class Room extends DurableObject {
       g.teacherActiveAt = Date.now();
       clearTimeout(g.teacherGoneTimer);
       g.teacherGoneTimer = null;
-      send(conn.ws, { t: 'welkom-studio', gameId: g.id, code: g.code });
+      // Snapshot so a reloaded studio can reconcile its plan (review Astra #2).
+      send(conn.ws, {
+        t: 'welkom-studio', gameId: g.id, code: g.code, fase: g.phase, gestart: g.started,
+        vraag: g.question ? { qid: g.question.qid, vervallen: g.question.void } : null,
+        gesteld: g.history.map(h => h.qid),
+      });
+      if (g.phase === 'final' && g.finale) send(conn.ws, g.finale);
       this.toTeacher(this.lobbyState());
       if (g.phase === 'paused' && g.pausedBecause === 'studio-weg') {
         // Back within the grace period: stay paused until the teacher continues.
@@ -282,7 +322,9 @@ export class Room extends DurableObject {
       if (!isStr(msg.token, 200) || msg.gameId !== g.id) {
         send(conn.ws, { t: 'einde', reden: 'weg' }); conn.ws.close(1000, 'oud spel'); return;
       }
-      const id = g.byTokenHash.get(await hash(msg.token));
+      const h = await hash(msg.token);
+      if (this.game !== g) { send(conn.ws, { t: 'einde', reden: 'weg' }); conn.ws.close(1000, 'geen spel'); return; }
+      const id = g.byTokenHash.get(h);
       const p = id && g.players.get(id);
       if (!p) { send(conn.ws, { t: 'einde', reden: 'verwijderd' }); conn.ws.close(1000, 'onbekend'); return; }
       if (p.ws) { send(p.ws, { t: 'vervangen' }); try { p.ws.close(1000, 'vervangen'); } catch {} }
@@ -300,9 +342,13 @@ export class Room extends DurableObject {
     const drawn = drawName(g.usedNames);
     if (!drawn) { send(conn.ws, { t: 'vol' }); conn.ws.close(1000, 'vol'); return; }
     const token = randomToken();
+    const tokenHash = await hash(token);
+    if (this.game !== g || !g.admissionOpen || g.players.size >= MAX_PLAYERS || g.usedNames.has(drawn.name)) {
+      send(conn.ws, { t: 'dicht' }); conn.ws.close(1000, 'dicht'); return;
+    }
     const p = {
       id: g.nextId++, name: drawn.name, emoji: drawn.emoji, admitted: false, rerolled: false,
-      ws: conn.ws, conn, tokenHash: await hash(token),
+      ws: conn.ws, conn, tokenHash,
       score: 0, streak: 0, bestStreak: 0, answers: new Map(),   // qid -> { choice, correct, ms }
     };
     g.usedNames.add(p.name);
@@ -354,7 +400,8 @@ export class Room extends DurableObject {
         if (!fresh || !old || fresh.admitted || !old.admitted || old.ws || !fresh.ws) return;
         const token = randomToken();
         hash(token).then(h => {
-          if (this.game !== g) return;
+          // Re-check after the await: the game, both players and the socket must still be as they were.
+          if (this.game !== g || !g.players.has(old.id) || !g.players.has(fresh.id) || old.ws || !fresh.ws) return;
           g.byTokenHash.delete(old.tokenHash);
           old.tokenHash = h;
           g.byTokenHash.set(h, old.id);
@@ -482,9 +529,10 @@ export class Room extends DurableObject {
       p.answers.set(q.qid, { choice: msg.keuze, correct: msg.keuze === q.correct, ms: now - q.openedAt });
       send(p.ws, { t: 'ontvangen', qid: q.qid, keuze: msg.keuze });
       this.answerCount();
-      // Everyone admitted and connected has answered: close early.
-      const active = [...g.players.values()].filter(x => x.admitted && x.ws);
-      if (active.length && active.every(x => x.answers.has(q.qid))) this.closeQuestion();
+      // Close early only when *every* admitted player has answered. A phone that
+      // briefly lost its connection keeps its remaining answer time (review Astra #4).
+      const admitted = [...g.players.values()].filter(x => x.admitted);
+      if (admitted.length && admitted.every(x => x.answers.has(q.qid))) this.closeQuestion();
       return;
     }
     if (msg.t === 'andere-naam') {
@@ -560,10 +608,12 @@ export class Room extends DurableObject {
     });
     for (const p of admitted) {
       const a = p.answers.get(q.qid);
-      send(p.ws, {
+      // Kept so a phone that reconnects during the show moment still gets it (review Astra #6).
+      p.lastResult = {
         t: 'uitslag', qid: q.qid, goed: q.correct, jouwKeuze: a ? a.choice : null, correct: !!a?.correct,
         score: p.score, plaats: ranked.findIndex(x => x.id === p.id) + 1, reeks: p.streak,
-      });
+      };
+      send(p.ws, p.lastResult);
     }
   }
 
@@ -583,15 +633,19 @@ export class Room extends DurableObject {
     const classScore = played.reduce((s, h) => s + [...h.results.values()].filter(Boolean).length, 0);
     const titles = this.titles(ranked.slice(3), played);
 
-    this.toTeacher({
+    g.finale = {
       t: 'finale', klassenscore: classScore,
       podium: ranked.slice(0, 3).map(p => ({ naam: p.name, emoji: p.emoji, score: p.score })),
       titels: ranked.slice(3).map(p => ({ naam: p.name, emoji: p.emoji, titel: titles.get(p.id) })),
+    };
+    this.toTeacher(g.finale);
+    ranked.forEach((p, i) => {
+      p.finale = {
+        t: 'finale', plaats: i + 1, score: p.score, klassenscore: classScore,
+        titel: i < 3 ? null : titles.get(p.id),
+      };
+      send(p.ws, p.finale);
     });
-    ranked.forEach((p, i) => send(p.ws, {
-      t: 'finale', plaats: i + 1, score: p.score, klassenscore: classScore,
-      titel: i < 3 ? null : titles.get(p.id),
-    }));
   }
 
   // Everyone outside the podium gets a title, never a last place.
@@ -654,6 +708,8 @@ export class Room extends DurableObject {
       score: p.score, plaats: p.admitted ? this.ranking().findIndex(x => x.id === p.id) + 1 : null,
       vraag: null,
     };
+    if (g.phase === 'final' && p.finale) snap.finale = p.finale;
+    if (g.phase === 'reveal' && p.lastResult && p.lastResult.qid === q?.qid) snap.uitslag = p.lastResult;
     if (q && !q.void && ['locked', 'open'].includes(g.phase)) {
       const a = p.answers.get(q.qid);
       snap.vraag = {

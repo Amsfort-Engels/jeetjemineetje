@@ -114,6 +114,7 @@ function runBar() {
   if (!bar) return;
   const total = 15_000;
   const tick = () => {
+    if (!vraag?.deadline) { clearInterval(barTimer); return; }
     const left = Math.max(0, vraag.deadline - performance.now());
     bar.style.width = `${(left / total) * 100}%`;
     if (left <= 0) clearInterval(barTimer);
@@ -180,6 +181,12 @@ function pauzeScherm(reden) {
 
 // ---------- connection ----------
 
+// Leaving a question behind: stop both the resend and the countdown (review Astra #7).
+function stopVraagTimers() {
+  clearTimeout(resendTimer);
+  clearInterval(barTimer);
+}
+
 function stopConn() {
   clearTimeout(resendTimer);
   clearInterval(barTimer);
@@ -194,7 +201,7 @@ function start(code) {
   wachtScherm();
   conn = new Verbinding({
     code,
-    hello: () => (session.token
+    hello: () => (session?.token
       ? { t: 'hello', role: 'player', token: session.token, gameId: session.gameId }
       : { t: 'hello', role: 'player' }),
     onMessage,
@@ -218,19 +225,29 @@ function onMessage(m) {
       return wachtScherm();
     case 'stand': {
       me = { ...me, naam: m.naam, emoji: m.emoji, toegelaten: m.toegelaten };
-      if (m.fase === 'paused') return pauzeScherm();
+      if (m.finale) return toonFinale(m.finale);
+      if (m.fase === 'paused') { stopVraagTimers(); return pauzeScherm(); }
+      if (m.uitslag) { stopVraagTimers(); vraag = null; return uitslagScherm(m.uitslag); }
       if (m.vraag) {
+        // An answer tapped while the connection was failing is kept and sent
+        // again, unless the relay already accepted one (review Astra #3).
+        const pending = vraag && vraag.qid === m.vraag.qid && vraag.keuze !== null && !vraag.ontvangen ? vraag.keuze : null;
+        const accepted = m.vraag.jouwKeuze;
         vraag = {
           qid: m.vraag.qid, knoppen: m.vraag.knoppen, dubbel: m.vraag.dubbel, open: m.vraag.open,
           deadline: m.vraag.open ? performance.now() + m.vraag.ms : null,
-          keuze: m.vraag.jouwKeuze, ontvangen: m.vraag.jouwKeuze !== null,
+          keuze: accepted ?? pending, ontvangen: accepted !== null,
         };
-        return vraagScherm();
+        vraagScherm();
+        if (accepted === null && pending !== null && m.vraag.open) sendAnswer();
+        return;
       }
+      stopVraagTimers();
+      vraag = null;
       return wachtScherm();
     }
     case 'vraag':
-      clearTimeout(resendTimer);
+      stopVraagTimers();
       vraag = { qid: m.qid, knoppen: m.knoppen, dubbel: m.dubbel, open: false, deadline: null, keuze: null, ontvangen: false };
       return vraagScherm();
     case 'open':
@@ -249,23 +266,20 @@ function onMessage(m) {
       clearTimeout(resendTimer);
       return;
     case 'uitslag':
-      clearTimeout(resendTimer);
-      clearInterval(barTimer);
+      stopVraagTimers();
       vraag = null;
       return uitslagScherm(m);
     case 'vervallen':
-      clearTimeout(resendTimer);
+      stopVraagTimers();
       vraag = null;
       show(naamkaart(), h('main', { class: 'scherm einde' }, h('p', {}, 'Deze vraag telt niet. Geen zorgen!')));
       return;
     case 'fase':
-      if (m.fase === 'paused') return pauzeScherm(m.reden);
+      if (m.fase === 'paused') { stopVraagTimers(); vraag = null; return pauzeScherm(m.reden); }
       if (!vraag) return wachtScherm();
       return;
     case 'finale':
-      clearSession();   // the game is over: nothing left to reconnect to
-      klaar = true;
-      return finaleScherm(m);
+      return toonFinale(m);
     case 'dicht':
       return eindScherm('De wedstrijd is al begonnen. Vraag de juf om je binnen te laten.');
     case 'vol':
@@ -287,6 +301,15 @@ function onMessage(m) {
     default:
       return;
   }
+}
+
+// The game is over: stop the connection and its timers first, then forget
+// the credentials (review Astra #6), then show the result.
+function toonFinale(m) {
+  klaar = true;
+  stopConn();
+  clearSession();
+  finaleScherm(m);
 }
 
 // ---------- start ----------

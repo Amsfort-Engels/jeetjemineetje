@@ -336,3 +336,79 @@ test('a game that no longer exists says so honestly (relay restart)', async () =
   p.send({ t: 'hello', role: 'player', token: 'x'.repeat(40), gameId: 'bestaat-niet' });
   assert.equal((await p.next(is('einde'))).reden, 'weg');
 });
+
+// ---------- review Astra, round 2 ----------
+
+test('#4 a briefly disconnected pupil keeps their answer time (no early close)', async () => {
+  const { room, t, players: [a, b] } = await startedGame(2);
+  await ask(t, 'q1', 0);
+  await a.next(is('open'));
+  b.close();                                   // b's phone locks
+  await wait(200);
+  a.send({ t: 'antwoord', qid: 'q1', keuze: 0 });
+  await a.next(is('ontvangen'));
+  await assert.rejects(a.next(is('uitslag'), 800), 'must not close early while b is away');
+
+  const b2 = connect(room.code);               // b comes back well before the deadline
+  await b2.opened;
+  b2.send({ t: 'hello', role: 'player', token: b.me.token, gameId: b.me.gameId });
+  const snap = await b2.next(is('stand'));
+  assert.equal(snap.vraag.open, true);
+  b2.send({ t: 'antwoord', qid: 'q1', keuze: 0 });
+  assert.equal((await b2.next(is('ontvangen'))).keuze, 0);
+  assert.equal((await b2.next(is('uitslag'))).correct, true);
+});
+
+test('#6 a phone that reconnects during the show moment gets its result', async () => {
+  const { room, t, players: [a, b] } = await startedGame(2);
+  await ask(t, 'q1', 1);
+  await a.next(is('open'));
+  a.send({ t: 'antwoord', qid: 'q1', keuze: 1 });
+  b.send({ t: 'antwoord', qid: 'q1', keuze: 0 });
+  await a.next(is('uitslag'));
+  a.close();
+  const a2 = connect(room.code);
+  await a2.opened;
+  a2.send({ t: 'hello', role: 'player', token: a.me.token, gameId: a.me.gameId });
+  const snap = await a2.next(is('stand'));
+  assert.equal(snap.uitslag?.correct, true);
+  assert.equal(snap.uitslag?.score, 100);
+});
+
+test('#6 a phone that reconnects after the finale gets the finale', async () => {
+  const { room, t, players: [a] } = await startedGame(1);
+  await ask(t, 'q1', 0);
+  await a.next(is('open'));
+  a.send({ t: 'antwoord', qid: 'q1', keuze: 0 });
+  await t.next(is('uitslag'));
+  t.send({ t: 'afronden' });
+  await a.next(is('finale'));
+  a.close();
+  const a2 = connect(room.code);
+  await a2.opened;
+  a2.send({ t: 'hello', role: 'player', token: a.me.token, gameId: a.me.gameId });
+  const snap = await a2.next(is('stand'));
+  assert.equal(snap.finale?.plaats, 1);
+});
+
+test('#2 a returning studio gets a snapshot, including a voided question', async () => {
+  const { room, t, players: [a] } = await startedGame(1);
+  await ask(t, 'q1', 0);
+  await a.next(is('open'));
+  t.close();
+  await a.next(is('vervallen'));
+  const t2 = connect(room.code);
+  await t2.opened;
+  t2.send({ t: 'hello', role: 'teacher', token: room.teacherToken });
+  const w = await t2.next(is('welkom-studio'));
+  assert.equal(w.gestart, true);
+  assert.equal(w.fase, 'paused');
+  assert.deepEqual(w.vraag, { qid: 'q1', vervallen: true });
+});
+
+test('#8 unknown browser origins are refused', async () => {
+  const res = await fetch(`${BASE}/rooms`, { method: 'POST', headers: { Origin: 'https://evil.example' } });
+  assert.equal(res.status, 403);
+  const ok = await fetch(`${BASE}/rooms`, { method: 'POST', headers: { Origin: 'http://localhost:8765' } });
+  assert.equal(ok.status, 201);
+});

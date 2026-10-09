@@ -416,3 +416,37 @@ met het ontwerp. Drie fixes, alle drie overgenomen:
 3. **Troosttitel bij "niets gemeten"** rouleert nu: *Mysterieuze kandidaat*, *Geheim wapen* of *Pokerface*.
 
 Relay-tests: 17 groen. Relay opnieuw gedeployd. Service worker naar `v11`.
+
+## 2026-10-10 — Review Astra op de gebouwde Wedstrijd, verwerkt
+
+Astra reviewde t/m `2db5066`: acht bevindingen, alle reproduceerbaar, alle opgelost.
+
+| # | Bevinding | Oplossing | Getest |
+|---|---|---|---|
+| 1 (P1) | Twee keer klikken op "Volgende vraag" stuurt twee vragen, de telefoons blijven op slot. | Eén overgang tegelijk. De vraag-index schuift pas als de relay de vraag bevestigt, knoppen gaan direct uit, mislukt versturen of geen bevestiging binnen 6 s → melding en terug. | Browser: dubbelklik op Start en driedubbelklik op Verder → elk precies één vraag. |
+| 2 (P1) | Studio herladen maakt een nieuw, willekeurig vragenplan, terwijl de scores doorlopen. | Exact plan en positie in `sessionStorage`. De relay stuurt bij inloggen een momentopname (fase, huidige vraag, vervallen ja/nee, al gestelde vragen). De studio verzoent daarmee, ook na gewoon wegvallen. | Relaytest #2. Browser: herladen tijdens een vraag → pauze → dezelfde vraag opnieuw, uit hetzelfde plan. |
+| 3 | Een antwoord dat bij wegvallende verbinding getikt is, gaat verloren bij opnieuw verbinden. | Het wachtende antwoord blijft bewaard. Na opnieuw verbinden wordt het opnieuw gestuurd, tenzij de relay al een antwoord had. | Browser: antwoord ingeslikt + verbinding weg → opnieuw verbonden → hetzelfde antwoord opnieuw gestuurd → "Goed zo!". |
+| 4 | Vroeg sluiten negeert leerlingen die even weg zijn, en die verliezen hun tijd. | Vroeg sluiten alleen als **alle** toegelaten leerlingen geantwoord hebben, verbonden of niet. | Relaytest #4. |
+| 5 | Dode verbindingen worden niet betrouwbaar vervangen. | Deadline op verbinden (8 s), op elke ping (8 s, bij wakker worden 4 s). Een dode verbinding wordt direct vervangen, zonder te wachten op een close-event. "Verbonden" pas na antwoord van de relay. | Browser: zombieverbinding (stuurt niets meer, blijft "open") binnen 13 s vervangen. |
+| 6 | Na opnieuw verbinden geen uitslag of finale. Na de finale bleef de telefoon proberen te verbinden en crashte. | De relay bewaart per leerling de laatste uitslag en de finale voor de momentopname. Na de finale: eerst verbinding en timers stoppen, dan gegevens wissen. | Relaytests #6 (2x). Browser: na de finale 20 s geen berichten, verbinding dicht, sessie gewist, geen fouten. |
+| 7 | Vervallen vraag: de aftelbalk bleef fouten gooien. | Eén functie stopt bij elk verlaten van een vraag zowel het opnieuw sturen als de aftelbalk. | Browser: pauze tijdens open vraag → geen fouten. |
+| 8 | De herkomstbeperking werkte niet: CORS houdt alleen het lezen tegen. | Onbekende browser-herkomst → 403, bij aanmaken én verbinden. | Relaytest #8, ook live. |
+
+**Het roomlimiet** (vervolg op het gat uit de vorige entry): Astra legde uit dat de limiter van Cloudflare
+per locatie en met vertraging telt, dus een salvo komt erdoor. Niet verkeerd ingesteld. Toegevoegd: een
+coördinerend object met een hard budget van 30 rooms per uur (in het geheugen; reset bij herstart).
+Live getest: na 30 rooms → 429. Daarna opnieuw gedeployd om het budget voor Marieke te resetten.
+**Niet gedaan:** Astra's voorstel voor een docentcode bij het aanmaken van rooms. Dat is extra drempel
+voor Els. Eerst kijken of het budget genoeg is. **Beslissing voor Marieke.**
+
+**Deploy-controle (Astra):** `wrangler deploy` toont alleen de bindings ROOMS, BUDGET, CREATE_LIMIT en
+JOIN_LIMIT, geen `LOCAL_TESTS`. `.dev.vars` wordt niet meegestuurd.
+
+**Races:** Astra vond geen hash-race. Toch na elke `await` in de relay opnieuw gecontroleerd of het spel, de
+spelers en de verbinding nog dezelfde zijn, voor het geval de runtime ooit verandert.
+
+**Tests:** 22 relaytests lokaal groen (5 nieuw). 6 daarvan ook live groen. Clientfixes getest in de browser
+met een tijdelijk testpagina (verwijderd) en een gescripte "juf" op de Mac.
+Service worker naar `v12`.
+
+**Nog steeds niet getest:** echte telefoons op slot, wifi → 4G, school-wifi, digibord.
