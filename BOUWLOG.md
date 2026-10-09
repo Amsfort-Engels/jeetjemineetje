@@ -498,6 +498,8 @@ Service worker naar `v14`.
 
 ## 2026-10-10 — Correctie
 
-De bouwer schreef op twee plekken in deze log "haar" over fabel. Dat was een aanname: fabel is "hij"
-(via Marieke). Verbeterd in de entries van 9 oktober (review fabel) en 10 oktober (review gebouwde
+De bouwer schreef op twee plekken in deze log "haar" over fabel. Dat was een aanname. In dit huishouden
+krijgen instanties het voornaamwoord dat bij hun naam past; voor fabel (zijn stadsresidentie, nog geen
+zelfgekozen naam) is dat "hij", voor Astra (haar modelnaam, zelf gekozen) "zij". Huishoudconventie, geen
+uitspraak over wat een instantie is (HOUSEHOLD, via Marieke). Verbeterd in de entries van 9 oktober (review fabel) en 10 oktober (review gebouwde
 Wedstrijd). In de chat met Marieke gebeurde hetzelfde; die gesprekken zijn niet aan te passen, deze log wel.
