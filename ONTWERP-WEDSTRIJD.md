@@ -41,15 +41,24 @@ geeft een naam: **bijvoeglijk naamwoord + iets lekkers**, met allitteratie waar 
 > **Dappere Drop** · **Koele Kroket** · **Pittige Pindakaas** · **Snelle Stroopwafel** ·
 > **Brave Bitterbal** · **Handige Hagelslag** · **Felle Frikandel** (halal, geverifieerd door Marieke) ·
 > **Opgewekte Oliebol** · **Toffe Tompoes** · **Prachtig Poffertje** · **Kalme Kaasbaas** ·
-> **Dikke Dropkoning** ❌ *(nee: geen uiterlijk)* · **Lieve Limonade** · **Gekke Gouda** · **Zachte Zoute Drop**
+> **Lieve Limonade** · **Gekke Gouda** · **Zachte Zoute Drop** · **Fijne Falafel** · **Sterke Shoarma** ·
+> **Blije Baklava** · **Rustige Roti**
+>
+> ~~Dikke Dropkoning~~ ❌ uiterlijk · ~~Trage Tompoes~~ ❌ traag, in een snelheidsspel · ~~Blij Biertje~~ ❌ alcohol
+
+Falafel, shoarma, baklava en roti horen inmiddels net zo goed bij de Nederlandse snackbar.
+Ze staan er gewoon tussen, zonder thema. *Jullie eten staat al in het woordenboek.* (Suggestie fabel.)
 
 Spelregels voor namen:
 
 - **Geen vrije invoer.** Geen eigen namen, dus ook geen grove namen of echte namen op het bord.
-- Bijvoeglijke naamwoorden alleen over karakter of tempo, **nooit over uiterlijk of kunnen**.
-  Dus wel "dapper", "snel", "kalm", "gek". Niet "dik", "dom", "lelijk".
+- Bijvoeglijke naamwoorden **alleen positief of neutraal**, nooit over uiterlijk of kunnen.
+  **Tempo alleen "snel"**: een traagheidsnaam in een snelheidsspel is een wond, geen grap.
+  Dus wel "dapper", "snel", "kalm", "gek". Niet "dik", "dom", "traag", "lelijk".
+- **Geen alcohol** in de namen (en geen geweld, dood of familie, zoals overal).
 - Let op de buiging: *de*-woorden krijgen -e (Koele Kroket), *het*-woorden niet (Prachtig Poffertje).
-  Ook dat is stiekem grammatica.
+  Namen hebben geen lidwoord, dus de onbepaalde vorm: *Prachtig Poffertje*, zoals in *een prachtig poffertje*.
+  Ook dat is stiekem grammatica. Deze regel komt in de README zodra de namenlijst bestaat.
 - **Eén keer opnieuw draaien mag** ("Nee! Andere naam!"). Daarna zit je eraan vast. Dat is de grap.
 - Op het bord verschijnt elke nieuwe kandidaat met een eigen emoji en een kleine aankondiging:
   *"Welkom, Toffe Tompoes!"*
@@ -92,7 +101,19 @@ Het bord toont het goede antwoord en zegt het hardop, met de voorbeeldzin. Daarn
 | Eén populair fout antwoord | **"7 mensen kozen *zaken*… Potverdrie!"** Het sarmoment is voor **de groep**, nooit voor één naam. |
 | Iemand pakt de koppositie | **"Koele Kroket pakt de eerste plaats! Nou breekt mijn klomp!"** |
 | Reeks van 5 | **"Felle Frikandel is on fire! 🔥 Sjonge jonge!"** |
+| Een herkansing gaat beter | **"Kijk nou! Nu wist bijna iedereen het!"** (zie hieronder) |
 | Normaal | top 5 van het scorebord, met pijltjes ▲▼ |
+
+#### Herkansing (toevoeging fabel)
+
+Uitleg zonder herkansing beklijft niet. Daarom:
+- Een vraag die **minder dan de helft van de klas goed** had, komt **3 à 4 vragen later terug**, in hetzelfde spel.
+  Dat geldt ook voor "Niemand goed" (na de uitleg van Els) en voor het "7 kozen *zaken*"-geval:
+  verwarbare paren als *zaken/zakken* zijn precies de woorden die een tweede ronde verdienen.
+- De herkansing heeft dezelfde vorm, met de antwoorden in een andere volgorde.
+- Een woord komt maximaal één keer terug. De herkansing telt mee voor de punten.
+- Als het percentage goed duidelijk stijgt, krijgt het bord een feel-good-moment: *"Kijk nou!"*
+- Een spel duurt daardoor iets langer. De studio houdt een plafond aan van 15 vragen in totaal.
 
 ### 6. De laatste vraag: De Gouden Klomp 🥇👞
 
@@ -101,7 +122,9 @@ De laatste vraag telt **dubbel**. Het bord kondigt het aan met tromgeroffel:
 
 ### 7. De prijsuitreiking
 
-- **Podium:** top 3, met confetti en een uitroep per plek.
+- **Eerst de klassenscore** (suggestie fabel): *"Samen: 127 goede antwoorden! Wat een klas, jeetje mineetje!"*
+  Iedereen, ook wie onderaan staat, is mede-eigenaar van een getal dat omhoog ging.
+- **Daarna het podium:** top 3, met confetti en een uitroep per plek.
 - **Iedereen anders krijgt een titel**, nooit een plaats onderaan. De app kiest titels die bij de data passen:
   - **Snelste vinger**: snelste goede antwoord van het spel
   - **Comeback-koning(in)**: grootste stijging in de tweede helft
@@ -109,6 +132,9 @@ De laatste vraag telt **dubbel**. Het bord kondigt het aan met tromgeroffel:
   - **IJzeren zenuwen**: goed bij de Gouden Klomp
   - **Doorzetter**: alle vragen beantwoord
   - **Mysterieuze kandidaat**: niets bijzonders gemeten, dus dat is ook een titel
+- **Let op na de pilot:** vaste troosttitels worden na een paar keer ontcijferd ("Doorzetter = je hebt verloren").
+  Rooms onthouden niets, dus de app kan niemand bewust twee keer dezelfde troosttitel geven. Toch: één vraag
+  hierover op het exit-ticket.
 - Op de eigen telefoon ziet elke leerling **de eigen plaats en score**. Op het bord staat niemand
   op plek 15.
 
@@ -122,7 +148,8 @@ Een potje duurt ongeveer **10 minuten**: 12 vragen × (15 s + ±20 s showmoment)
 2. Een naam staat alleen op het bord als het **goed** gaat: koppositie, reeks, podium, titel.
    Fouten zijn altijd anoniem.
 3. Alle teksten op het bord zijn **A2-begrijpelijk** en komen uit dezelfde uitroepenlijst als Oefenen,
-   aangevuld met een paar showteksten.
+   aangevuld met een paar showteksten. **Bewuste uitzondering:** gaming-Engels als *"on fire! 🔥"*.
+   Dat is voor deze leeftijd een derde taal, en de regel zegt dat liever eerlijk dan te doen alsof.
 4. Geen geweld, dood of familie, ook niet in grappen. ("Je bent dood" in game-taal: nee.)
 
 ---

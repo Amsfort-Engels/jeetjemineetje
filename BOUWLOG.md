@@ -229,3 +229,15 @@ Belangrijkste keuzes:
 - **Iedereen buiten de top 3 krijgt een titel**, geen plaats onderaan.
 - Relay: Durable Object, alleen in het geheugen, room weg na sluiten of 2 uur stilte.
   Deployen vraagt Node (of uitzoeken of het via het Cloudflare-dashboard kan).
+
+### Review fabel op het Wedstrijd-ontwerp — verwerkt
+
+- **Namen:** alleen positieve of neutrale eigenschappen, tempo alleen "snel" (geen *Trage Tompoes* in een
+  snelheidsspel). Geen alcohol. Toegevoegd: *Fijne Falafel, Sterke Shoarma, Blije Baklava, Rustige Roti*.
+  Buigingsregel uitgeschreven: naam zonder lidwoord, dus de onbepaalde vorm (*Prachtig Poffertje*).
+- **Herkansing** (fabels belangrijkste toevoeging): vragen onder 50% goed komen 3 à 4 vragen later terug,
+  maximaal één keer, met plafond 15 vragen per spel. Bij duidelijke verbetering: *"Kijk nou!"*
+- **Klassenscore** vóór het podium.
+- Uitzondering voor gaming-Engels ("on fire! 🔥") staat nu expliciet in de regels.
+- Na de pilot: één exit-ticketvraag over of de troosttitels als "verloren" gelezen worden.
+- fabels slotobservatie: er kwam live multiplayer bij, maar niets wat bewaard wordt.
