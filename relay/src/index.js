@@ -65,7 +65,8 @@ export default {
       // burst gets through. A single coordinator object keeps a hard budget.
       // Its counter lives in memory and resets if Cloudflare restarts it.
       if (env.LOCAL_TESTS !== '1') {
-        const ok = await env.BUDGET.get(env.BUDGET.idFromName('budget')).allow();
+        const ip = request.headers.get('CF-Connecting-IP') || 'onbekend';
+        const ok = await env.BUDGET.get(env.BUDGET.idFromName('budget')).allow(ip);
         if (!ok) return json({ error: 'te-veel' }, 429, origin);
       }
       for (let attempt = 0; attempt < 8; attempt++) {
@@ -97,19 +98,26 @@ export default {
 
 // ---------- room budget ----------
 
-const ROOMS_PER_HOUR = 30;   // one class needs a handful; this only stops floods
+// One caller (IP address) can't use up everyone's rooms: each IP gets its own
+// small allowance inside a larger global one (review Astra, round 2). A
+// determined attacker with many addresses can still exhaust the global
+// allowance; the full fix would be a teacher code, which was deliberately
+// left out for now (decision Marieke, BOUWLOG 2026-10-10).
+const ROOMS_PER_IP_PER_HOUR = 8;
+const ROOMS_PER_HOUR = 120;
 
 export class Budget extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
-    this.created = [];   // timestamps, memory only
+    this.created = [];   // [timestamp, ip], memory only
   }
 
-  async allow() {
+  async allow(ip) {
     const now = Date.now();
-    this.created = this.created.filter(t => now - t < 60 * 60_000);
+    this.created = this.created.filter(([t]) => now - t < 60 * 60_000);
     if (this.created.length >= ROOMS_PER_HOUR) return false;
-    this.created.push(now);
+    if (this.created.filter(([, who]) => who === ip).length >= ROOMS_PER_IP_PER_HOUR) return false;
+    this.created.push([now, ip]);
     return true;
   }
 }
@@ -300,11 +308,7 @@ export class Room extends DurableObject {
       clearTimeout(g.teacherGoneTimer);
       g.teacherGoneTimer = null;
       // Snapshot so a reloaded studio can reconcile its plan (review Astra #2).
-      send(conn.ws, {
-        t: 'welkom-studio', gameId: g.id, code: g.code, fase: g.phase, gestart: g.started,
-        vraag: g.question ? { qid: g.question.qid, vervallen: g.question.void } : null,
-        gesteld: g.history.map(h => h.qid),
-      });
+      send(conn.ws, { t: 'welkom-studio', gameId: g.id, code: g.code, ...this.teacherSnapshot() });
       if (g.phase === 'final' && g.finale) send(conn.ws, g.finale);
       this.toTeacher(this.lobbyState());
       if (g.phase === 'paused' && g.pausedBecause === 'studio-weg') {
@@ -484,10 +488,19 @@ export class Room extends DurableObject {
 
   newQuestion(msg) {
     const g = this.game;
-    if (!g.started || !['lobby', 'reveal'].includes(g.phase)) return;
-    if (!isStr(msg.qid, 40) || !Array.isArray(msg.knoppen) || msg.knoppen.length < 2 || msg.knoppen.length > 4) return;
+    if (!isStr(msg.qid, 40)) return;
+    // The same question again (a resend after a lost confirmation): confirm it
+    // again instead of refusing it (review Astra, round 2).
+    if (g.question?.qid === msg.qid && !g.question.void && ['locked', 'open'].includes(g.phase)) {
+      this.toTeacher({ t: 'vraag-klaar', qid: msg.qid });
+      return;
+    }
+    if (!g.started || !['lobby', 'reveal'].includes(g.phase) || g.history.some(h => h.qid === msg.qid)) {
+      this.refuse('vraag', { qid: msg.qid });
+      return;
+    }
+    if (!Array.isArray(msg.knoppen) || msg.knoppen.length < 2 || msg.knoppen.length > 4) return;
     if (!msg.knoppen.every(k => isStr(k, 60)) || !isInt(msg.goed, 0, msg.knoppen.length - 1)) return;
-    if (g.history.some(h => h.qid === msg.qid)) return;
     g.question = {
       qid: msg.qid, labels: msg.knoppen, correct: msg.goed, double: msg.dubbel === true,
       // Only used for titles at the end; unknown values are ignored.
@@ -600,12 +613,13 @@ export class Room extends DurableObject {
       if (i !== q.correct && c >= 3 && (!popularWrong || c > popularWrong.aantal)) popularWrong = { knop: i, aantal: c };
     });
 
-    this.toTeacher({
+    g.lastTeacherResult = {
       t: 'uitslag', qid: q.qid, goed: q.correct, telling: counts,
       totaal: admitted.length, beantwoord: answered, aantalGoed: correctCount,
       populairFout: popularWrong, nieuweLeider: newLeader, reeksVijf: streakFives,
       top5: ranked.slice(0, 5).map(p => ({ naam: p.name, emoji: p.emoji, score: p.score })),
-    });
+    };
+    this.toTeacher(g.lastTeacherResult);
     for (const p of admitted) {
       const a = p.answers.get(q.qid);
       // Kept so a phone that reconnects during the show moment still gets it (review Astra #6).
@@ -626,7 +640,9 @@ export class Room extends DurableObject {
 
   finish() {
     const g = this.game;
-    if (!g || !['reveal', 'paused'].includes(g.phase)) return;
+    if (!g) return;
+    if (g.phase === 'final' && g.finale) { this.toTeacher(g.finale); return; }   // a repeated "afronden"
+    if (!['reveal', 'paused'].includes(g.phase)) { this.refuse('afronden'); return; }
     g.phase = 'final';
     const ranked = this.ranking();
     const played = g.history.filter(h => !h.void);
@@ -719,6 +735,27 @@ export class Room extends DurableObject {
       };
     }
     send(p.ws, snap);
+  }
+
+  // Where the game really is, for the studio to reconcile against.
+  teacherSnapshot() {
+    const g = this.game;
+    const q = g.question;
+    return {
+      fase: g.phase, gestart: g.started,
+      vraag: q ? {
+        qid: q.qid, vervallen: q.void,
+        ms: g.phase === 'open' ? Math.max(0, q.deadline - Date.now()) : null,
+      } : null,
+      gesteld: g.history.map(h => h.qid),
+      // A studio that was away while the question closed still gets the show moment.
+      uitslag: g.phase === 'reveal' && g.lastTeacherResult?.qid === q?.qid ? g.lastTeacherResult : null,
+    };
+  }
+
+  // An explicit "no", with the snapshot, so the studio never has to guess.
+  refuse(voor, extra = {}) {
+    this.toTeacher({ t: 'geweigerd', voor, ...extra, stand: this.teacherSnapshot() });
   }
 
   lobbyState() {

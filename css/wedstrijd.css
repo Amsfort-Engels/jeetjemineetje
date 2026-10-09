@@ -110,7 +110,7 @@
 .wknop .aantal { position: absolute; top: 10px; right: 16px; font-size: 0.8em; opacity: 0.9; }
 .tijdbalk.studio { height: 22px; }
 .tijdbalk.studio .loopt { animation: leeg 15s linear forwards; }
-@keyframes leeg { from { width: 100%; } to { width: 0; } }
+@keyframes leeg { from { width: var(--start, 100%); } to { width: 0; } }
 .teller-studio { color: var(--inkt-zacht); text-align: center; margin: 0; }
 .studio-knoppen { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 

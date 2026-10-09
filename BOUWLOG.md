@@ -451,3 +451,25 @@ met een tijdelijk testpagina (verwijderd) en een gescripte "juf" op de Mac.
 Service worker naar `v12`.
 
 **Nog steeds niet getest:** echte telefoons op slot, wifi → 4G, school-wifi, digibord.
+
+## 2026-10-10 — Hercontrole Astra (`9b31e22`), verwerkt
+
+Astra: de telefoonkant houdt nu, het bord niet. De studio moest drie dingen uit elkaar houden:
+de relay **weigert**, de levering is **onzeker**, of de relay **heeft het al**. Vier bevindingen:
+
+| # | Bevinding | Oplossing | Getest |
+|---|---|---|---|
+| 1 (P1) | Na 6 s gaf de studio een vraag op. Kwam de bevestiging later, dan bleef de relay op die vraag hangen en weigerde hij elke nieuwe. | Een stap is nu een vast bericht met een vaste vraag-ID. Bij geen antwoord: **hetzelfde bericht opnieuw** (na 4 s, max. 3 keer, daarna een wachtscherm met "Opnieuw proberen"). De relay bevestigt dezelfde vraag gewoon opnieuw. Alleen een expliciete weigering laat de stap vallen. | Relaytest. Browser: bevestiging 9 s vertraagd → zelfde q2 na 4 s opnieuw → bevestigd → vraag liep gewoon. |
+| 2 (P1) | `verzoen()` handelde een nog lopende vraag niet af, en een verloren Start liet een dode Start-knop achter. | De relay stuurt bij inloggen en bij elke weigering een momentopname. Studio: lopende vraag in het plan → hervatten (geluid + openen, of verder met de resterende tijd). Onbekende lopende vraag → pauze, zodat hij vervalt. Wachtende stap die de relay niet kent → zelfde bericht opnieuw. `gestart` komt nu van de relay. | Relaytests (socket vervangen, verloren start). Browser: Start ingeslikt → geweigerd → Start-knop terug → tweede klik werkt. Lopende vraag met 7 s → hervat, balk op 47%. Onbekende vraag → pauze. |
+| 3 | Afronden kon vast komen te zitten: knop uit bij mislukt versturen, of "afronden" verloren en nooit opnieuw. | Mislukt versturen → knop terug. Geen finale binnen 5 s → knop terug. De relay beantwoordt een herhaald "afronden" met dezelfde finale. Te vroeg afronden → expliciete weigering. | Relaytest. Browser: "afronden" ingeslikt → na 5 s knop terug → tweede klik → finale. |
+| 4 | Het roombudget was gedeeld: één aanvaller kon de docent buitensluiten. | Budget per IP-adres (8 per uur) binnen een totaal (120 per uur). Restrisico (veel adressen) staat in het ontwerp; de volledige oplossing blijft een docentcode. | Live: rooms aanmaken werkt. Na de livetests opnieuw gedeployd om het budget te resetten. |
+
+**Ook gevonden en opgelost:** viel de studio weg terwijl een vraag sloot, dan miste het bord het showmoment.
+De momentopname bevat nu de laatste uitslag; de studio toont die alsnog.
+
+**Bijvangst:** tijdens het testen herstartte de lokale relay vanzelf (codewijziging). Alle rooms weg, de
+studio kreeg "einde", wiste zijn opslag en toonde de eerlijke melding. Het herstart-pad uit het ontwerp,
+onbedoeld getest, en het werkte.
+
+**Tests:** 28 relaytests lokaal groen (6 nieuw). De 7 nieuwste ook live groen. Studioscenario's in de
+browser met een tijdelijke testpagina (verwijderd). Service worker naar `v13`.

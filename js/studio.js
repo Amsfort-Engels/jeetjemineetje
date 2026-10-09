@@ -129,15 +129,16 @@ function bewaar() {
   if (!room || !game) return;
   const plan = game.plan.map(v => ({
     id: v.word.id, vorm: v.vorm, opties: v.opties, herkansing: v.herkansing,
-    eerder: v.eerder, qid: v.qid, pct: v.pct,
+    eerder: v.eerder, qid: v.qid, pct: v.pct, dubbel: v.dubbel,
   }));
-  try { sessionStorage.setItem(KEY, JSON.stringify({ room, plan, i: game.i, laatste: game.laatste })); } catch {}
+  const pending = game.pending ? { qid: game.pending.qid, index: game.pending.index, msg: game.pending.msg } : null;
+  try { sessionStorage.setItem(KEY, JSON.stringify({ room, plan, i: game.i, laatste: game.laatste, pending })); } catch {}
 }
 
 function herstel(saved) {
   const byId = new Map([...themes.values()].flat().map(w => [w.id, w]));
   const plan = saved.plan.map(v => ({ ...v, word: byId.get(v.id) })).filter(v => v.word);
-  return { plan, i: saved.i, geluid: true, gestart: false, laatste: saved.laatste, pending: null };
+  return { plan, i: saved.i, geluid: true, gestart: false, laatste: saved.laatste, pending: saved.pending || null };
 }
 
 // ---------- the room ----------
@@ -179,6 +180,7 @@ function onMessage(m) {
     case 'welkom-kandidaat':
       return toast(`Welkom, ${m.naam}! ${m.emoji}`);
     case 'vraag-klaar': return vraagKlaar(m.qid);
+    case 'geweigerd': return geweigerd(m);
     case 'teller': {
       const t = document.querySelector('.teller-studio');
       if (t) t.textContent = `${m.binnen} / ${m.totaal} antwoorden binnen`;
@@ -198,7 +200,9 @@ function onMessage(m) {
       }
       if (m.fase === 'lobby' && screen === 'pauze') return lobbyScherm();
       return;
-    case 'finale': return finale(m);
+    case 'finale':
+      clearTimeout(game?.afrondTimer);
+      return finale(m);
     case 'vervangen':
       conn?.stop();
       return foutScherm('De studio is op een ander scherm geopend.');
@@ -218,21 +222,58 @@ function onMessage(m) {
 // A voided question is asked again, but only if it was the one we had committed to.
 function markeerVervallen(qid) {
   if (!game) return;
-  if (game.pending?.qid === qid) game.pending = null;
+  if (game.pending?.qid === qid) stopPending();
   if (game.plan[game.i]?.qid === qid) game.vervallen = true;
 }
 
-// After (re)connecting: the relay says where the game really is (review Astra #2).
+// After (re)connecting, or after a refusal: the relay's snapshot is the truth
+// (review Astra, round 2). Three cases are kept apart: the relay already has
+// our question (resume it), the relay never got it (send the same one again),
+// or the relay refused it (drop it).
 function verzoen(m) {
   if (!game) return;
-  game.pending = null;
   clearTimeout(game.pendingTimer);
-  if (m.vraag?.vervallen) markeerVervallen(m.vraag.qid);
-  if (!m.gestart) { if (screen !== 'lobby') lobbyScherm(); return; }
-  game.gestart = true;
+  clearTimeout(game.afrondTimer);
+
+  // Start: only true if the relay says so. A lost Start shows the button again.
+  game.gestart = !!m.gestart;
+  if (!m.gestart) { stopPending(); if (screen !== 'lobby') lobbyScherm(); return; }
+
   if (m.fase === 'final') return;                 // the relay sends the finale right after this
-  if (m.fase === 'paused') return pauzeScherm('studio-weg');
-  if (screen === 'lobby' || screen === 'verbinden' || screen === 'vraag' || screen === 'klomp') return volgendeKnopScherm();
+  game.afronden = false;                          // not final: a lost "afronden" may be tried again
+
+  if (m.vraag?.vervallen) markeerVervallen(m.vraag.qid);
+
+  // A question that is live on the relay: find it in our plan and carry on.
+  if (m.vraag && !m.vraag.vervallen && (m.fase === 'locked' || m.fase === 'open')) {
+    const idx = game.plan.findIndex(v => v.qid === m.vraag.qid);
+    stopPending();
+    if (idx < 0) { conn.send({ t: 'pauze' }); return; }   // not ours: void it, the pause screen follows
+    game.i = idx;
+    bewaar();
+    return m.fase === 'locked' ? stelVraag(game.plan[idx]) : vraagScherm(game.plan[idx], true, m.vraag.ms);
+  }
+
+  if (m.fase === 'paused') { stopPending(); return pauzeScherm('studio-weg'); }
+
+  // The question closed while we were away: show its result now.
+  if (m.fase === 'reveal' && m.uitslag && !game.pending && game.plan[game.i]?.qid === m.uitslag.qid
+      && ['vraag', 'wacht', 'verbinden'].includes(screen)) return uitslag(m.uitslag);
+
+  // The relay is between questions. A step we were still waiting for never
+  // arrived: send exactly the same question again.
+  if (game.pending) return verstuurPending();
+  if (['lobby', 'verbinden', 'vraag', 'klomp', 'wacht'].includes(screen)) return volgendeKnopScherm();
+}
+
+function geweigerd(m) {
+  if (m.voor === 'vraag' && game.pending?.qid === m.qid) {
+    // A real "no" from the relay (e.g. the game is paused): drop this step.
+    stopPending();
+    toast('Dat lukte niet: de wedstrijd stond even stil. Probeer het nog eens.');
+  }
+  if (m.voor === 'afronden') game.afronden = false;
+  verzoen(m.stand);
 }
 
 function lobbyScherm() {
@@ -273,6 +314,8 @@ function startSpel() {
   if (game.gestart) return;
   speak('Daar gaan we!');   // inside the click: keeps speech unlocked after a reload
   if (!conn.send({ t: 'start', aantal: game.plan.length })) return toast('Geen verbinding. Probeer het zo nog eens.');
+  // If this "start" is lost, the next reconnect snapshot says gestart:false
+  // and the Start button works again.
   game.gestart = true;
   game.i = -1;
   bewaar();
@@ -281,8 +324,10 @@ function startSpel() {
 
 // ---------- a question ----------
 
-// Only one step forward at a time (review Astra #1): the index moves only when
-// the relay confirms the question, and a second click does nothing.
+// Only one step forward at a time (review Astra #1). The step is a fixed
+// message with a fixed qid: on a timeout or reconnect exactly the same message
+// is sent again, and the relay recognises it. Only an explicit refusal from
+// the relay drops it (review Astra, round 2).
 async function volgendeVraag() {
   if (!game || game.pending) return;
   const next = game.i + 1;
@@ -290,7 +335,14 @@ async function volgendeVraag() {
   const v = game.plan[next];
   v.qid = `q${next + 1}${v.herkansing ? 'h' : ''}-${Math.random().toString(36).slice(2, 7)}`;
   v.dubbel = next === game.plan.length - 1;
-  game.pending = { qid: v.qid, index: next };
+  game.pending = {
+    qid: v.qid, index: next, tries: 0,
+    msg: {
+      t: 'vraag', qid: v.qid, knoppen: v.opties.map(o => o.label), goed: v.opties.findIndex(o => o.goed),
+      dubbel: v.dubbel, vorm: v.vorm, herkansing: v.herkansing,
+    },
+  };
+  bewaar();
   document.querySelectorAll('.studio-knoppen button, .studio-midden button').forEach(b => { b.disabled = true; });
 
   if (v.dubbel) {
@@ -303,40 +355,66 @@ async function volgendeVraag() {
     await say('Laatste vraag! Voor de gouden klomp!');
     await wait(1500);
   }
-  if (game.pending?.qid !== v.qid) return;   // a reconnect cleared it meanwhile
-  const sent = conn.send({
-    t: 'vraag', qid: v.qid, knoppen: v.opties.map(o => o.label), goed: v.opties.findIndex(o => o.goed),
-    dubbel: v.dubbel, vorm: v.vorm, herkansing: v.herkansing,
-  });
-  if (!sent) return mislukt('Geen verbinding. Probeer het zo nog eens.');
-  // The relay can refuse (wrong phase): don't wait forever.
-  clearTimeout(game.pendingTimer);
-  game.pendingTimer = setTimeout(() => { if (game.pending?.qid === v.qid) mislukt('De vraag kwam niet aan. Probeer het nog eens.'); }, 6000);
+  if (game.pending?.qid !== v.qid) return;
+  verstuurPending();
 }
 
-function mislukt(tekst) {
+function verstuurPending() {
+  const p = game.pending;
+  if (!p) return;
+  clearTimeout(game.pendingTimer);
+  if (!conn.send(p.msg)) {
+    // Not connected: keep the step. The reconnect snapshot decides what happens.
+    return wachtScherm();
+  }
+  p.tries++;
+  // No answer yet: send the same message again. After a few tries, show a
+  // waiting screen; the step stays pending until the relay answers.
+  game.pendingTimer = setTimeout(() => {
+    if (game.pending !== p) return;
+    if (p.tries < 3) verstuurPending();
+    else wachtScherm();
+  }, 4000);
+}
+
+function stopPending() {
+  if (!game) return;
   game.pending = null;
   clearTimeout(game.pendingTimer);
-  toast(tekst);
-  volgendeKnopScherm();
+  bewaar();
+}
+
+function wachtScherm() {
+  screen = 'wacht';
+  show(h('main', { class: 'studio-midden' },
+    h('p', { class: 'studio-groot' }, 'Even wachten op de wedstrijdserver…'),
+    h('button', { class: 'knop rustig', type: 'button', onclick: () => { if (game.pending) { game.pending.tries = 0; verstuurPending(); } } },
+      'Opnieuw proberen')));
 }
 
 function afronden() {
   if (game.afronden) return;
-  if (!conn.send({ t: 'afronden' })) return toast('Geen verbinding. Probeer het zo nog eens.');
+  if (!conn.send({ t: 'afronden' })) { toast('Geen verbinding. Probeer het zo nog eens.'); return volgendeKnopScherm(); }
   game.afronden = true;
+  // No finale within a few seconds: allow another try. The relay answers a
+  // repeated "afronden" with the same finale.
+  clearTimeout(game.afrondTimer);
+  game.afrondTimer = setTimeout(() => { if (screen !== 'finale') { game.afronden = false; volgendeKnopScherm(); } }, 5000);
 }
 
-async function vraagKlaar(qid) {
-  if (!game.pending || game.pending.qid !== qid) return;
-  game.i = game.pending.index;   // the relay confirmed: now the step counts
-  game.pending = null;
-  clearTimeout(game.pendingTimer);
-  bewaar();
-  const v = game.plan[game.i];
+function vraagKlaar(qid) {
+  // Our pending step, or a repeat confirmation of the question we're already on.
+  if (game.pending?.qid === qid) {
+    game.i = game.pending.index;   // the relay confirmed: now the step counts
+    stopPending();
+    return stelVraag(game.plan[game.i]);
+  }
+}
+
+// Show the question, play the sound, then open the answer window.
+async function stelVraag(v) {
   screen = 'vraag';
   vraagScherm(v, false);
-  // Sound first; the answer window only opens once it's done.
   if (v.vorm === 'luister' || v.vorm === 'spelling') {
     await wait(600);
     await say(v.word.woord);
@@ -346,11 +424,12 @@ async function vraagKlaar(qid) {
     await wait(1200);
   }
   if (screen !== 'vraag' || game.plan[game.i] !== v) return;
-  conn.send({ t: 'open', qid });
+  conn.send({ t: 'open', qid: v.qid });
   vraagScherm(v, true);
 }
 
-function vraagScherm(v, open) {
+function vraagScherm(v, open, msLeft = 15000) {
+  screen = 'vraag';
   const opdracht = { luister: 'Luister! Welk woord hoor je?', spelling: 'Luister! Hoe schrijf je het?', zin: 'Welk woord past?' }[v.vorm];
   let midden;
   if (v.vorm === 'zin') {
@@ -367,7 +446,8 @@ function vraagScherm(v, open) {
     midden,
     h('div', { class: 'studio-opties' }, v.opties.map((o, i) => h('div', { class: `wknop ${KNOPPEN[i].kleur}` },
       h('span', { class: 'vorm' }, KNOPPEN[i].vorm), h('span', { class: 'wlabel' }, o.label)))),
-    open ? h('div', { class: 'tijdbalk studio' }, h('span', { class: 'loopt' })) : h('p', { class: 'wstatus' }, '🔊 Luister…'),
+    open ? h('div', { class: 'tijdbalk studio' }, h('span', { class: 'loopt', style: `--start:${(msLeft / 15000) * 100}%;animation-duration:${msLeft}ms` }))
+      : h('p', { class: 'wstatus' }, '🔊 Luister…'),
     h('p', { class: 'teller-studio' }, ''),
     h('div', { class: 'studio-knoppen' },
       v.vorm !== 'zin' ? h('button', { class: 'knop rustig', type: 'button', onclick: () => say(v.word.woord) }, '🔊 Nog een keer') : null,
@@ -443,9 +523,11 @@ function uitslag(m) {
 
 function volgendeKnopScherm() {
   screen = 'uitslag';
+  const klaar = game.i >= game.plan.length - 1;
   show(h('main', { class: 'studio-midden' },
-    h('p', { class: 'studio-groot' }, 'We gaan weer verder!'),
-    h('button', { class: 'knop groot', type: 'button', onclick: volgendeVraag }, 'Volgende vraag ▶')));
+    h('p', { class: 'studio-groot' }, klaar ? 'Alle vragen zijn gesteld!' : 'We gaan weer verder!'),
+    h('button', { class: 'knop groot', type: 'button', onclick: e => { e.currentTarget.disabled = true; klaar ? afronden() : volgendeVraag(); } },
+      klaar ? 'Prijsuitreiking! 🏆' : 'Volgende vraag ▶')));
 }
 
 function top5(rij) {

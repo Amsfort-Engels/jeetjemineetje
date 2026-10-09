@@ -403,7 +403,8 @@ test('#2 a returning studio gets a snapshot, including a voided question', async
   const w = await t2.next(is('welkom-studio'));
   assert.equal(w.gestart, true);
   assert.equal(w.fase, 'paused');
-  assert.deepEqual(w.vraag, { qid: 'q1', vervallen: true });
+  assert.equal(w.vraag.qid, 'q1');
+  assert.equal(w.vraag.vervallen, true);
 });
 
 test('#8 unknown browser origins are refused', async () => {
@@ -411,4 +412,103 @@ test('#8 unknown browser origins are refused', async () => {
   assert.equal(res.status, 403);
   const ok = await fetch(`${BASE}/rooms`, { method: 'POST', headers: { Origin: 'http://localhost:8765' } });
   assert.equal(ok.status, 201);
+});
+
+// ---------- review Astra, round 3 ----------
+
+test('the same question sent twice is confirmed twice, not refused', async () => {
+  const { t, players: [a] } = await startedGame(1);
+  const msg = { t: 'vraag', qid: 'q1', knoppen: ['a', 'b', 'c', 'd'], goed: 0 };
+  t.send(msg);
+  await t.next(is('vraag-klaar'));
+  t.send(msg);                                  // the confirmation got lost: resend the same
+  assert.equal((await t.next(is('vraag-klaar'))).qid, 'q1');
+  await assert.rejects(t.next(is('geweigerd'), 500));
+  t.send({ t: 'open', qid: 'q1' });
+  await a.next(is('open'));
+});
+
+test('a question during a pause is refused explicitly, with the snapshot', async () => {
+  const { t } = await startedGame(1);
+  t.send({ t: 'pauze' });
+  await t.next(m => m.t === 'fase' && m.fase === 'paused');
+  t.send({ t: 'vraag', qid: 'q1', knoppen: ['a', 'b'], goed: 0 });
+  const no = await t.next(is('geweigerd'));
+  assert.equal(no.voor, 'vraag');
+  assert.equal(no.qid, 'q1');
+  assert.equal(no.stand.fase, 'paused');
+});
+
+test('a studio that replaces its socket mid-question gets the live question back', async () => {
+  const { room, t, players: [a] } = await startedGame(1);
+  await ask(t, 'q1', 0);
+  await a.next(is('open'));
+  const t2 = connect(room.code);                // new socket before the old one is closed
+  await t2.opened;
+  t2.send({ t: 'hello', role: 'teacher', token: room.teacherToken });
+  const w = await t2.next(is('welkom-studio'));
+  assert.equal(w.fase, 'open');
+  assert.equal(w.vraag.qid, 'q1');
+  assert.equal(w.vraag.vervallen, false);
+  assert.ok(w.vraag.ms > 0 && w.vraag.ms <= 15000);
+  a.send({ t: 'antwoord', qid: 'q1', keuze: 0 });
+  assert.equal((await t2.next(is('uitslag'))).aantalGoed, 1);
+});
+
+test('finishing twice sends the same finale twice; finishing too early is refused', async () => {
+  const { t, players: [a] } = await startedGame(1);
+  t.send({ t: 'afronden' });                    // still in the lobby phase: refused
+  assert.equal((await t.next(is('geweigerd'))).voor, 'afronden');
+  await ask(t, 'q1', 0);
+  await a.next(is('open'));
+  a.send({ t: 'antwoord', qid: 'q1', keuze: 0 });
+  await t.next(is('uitslag'));
+  t.send({ t: 'afronden' });
+  const f1 = await t.next(is('finale'));
+  t.send({ t: 'afronden' });
+  const f2 = await t.next(is('finale'));
+  assert.deepEqual(f1, f2);
+});
+
+test('a lost start shows up as gestart:false in the snapshot', async () => {
+  const room = await newRoom();
+  const t = await teacher(room);
+  await player(room);
+  t.close();                                    // "start" never sent
+  const t2 = connect(room.code);
+  await t2.opened;
+  t2.send({ t: 'hello', role: 'teacher', token: room.teacherToken });
+  assert.equal((await t2.next(is('welkom-studio'))).gestart, false);
+});
+
+test('a studio that was away while the question closed gets the result in its snapshot', async () => {
+  const { room, t, players: [a] } = await startedGame(1);
+  await ask(t, 'q1', 0);
+  await a.next(is('open'));
+  const t2 = connect(room.code);                // replaces the studio socket
+  await t2.opened;
+  t2.send({ t: 'hello', role: 'teacher', token: room.teacherToken });
+  await t2.next(is('welkom-studio'));
+  t2.close();                                   // and that one drops too: game pauses, q1 void
+  await a.next(is('vervallen'));
+  const t3 = connect(room.code);
+  await t3.opened;
+  t3.send({ t: 'hello', role: 'teacher', token: room.teacherToken });
+  await t3.next(is('welkom-studio'));
+  t3.send({ t: 'verder' });
+  await ask(t3, 'q2', 1);
+  await a.next(m => m.t === 'open' && m.qid === 'q2');
+  const t4 = connect(room.code);                // replace again, then the question closes
+  await t4.opened;
+  t4.send({ t: 'hello', role: 'teacher', token: room.teacherToken });
+  await t4.next(is('welkom-studio'));
+  a.send({ t: 'antwoord', qid: 'q2', keuze: 1 });
+  await t4.next(is('uitslag'));
+  const t5 = connect(room.code);                // a studio arriving after the close
+  await t5.opened;
+  t5.send({ t: 'hello', role: 'teacher', token: room.teacherToken });
+  const w = await t5.next(is('welkom-studio'));
+  assert.equal(w.fase, 'reveal');
+  assert.equal(w.uitslag?.qid, 'q2');
+  assert.equal(w.uitslag?.aantalGoed, 1);
 });
