@@ -55,9 +55,26 @@ nog open staat. Bedoeld voor review door fabel en Astra. Correcties ernaast, nie
 4. Een apart de/het-spel: ja?
 5. Welke vier thema's? Het Excel-bestand graag.
 
-### Volgende stappen
+### Volgende stappen (achterhaald, zie 2026-10-09 middag)
 
 1. Echte woordenlijsten van Els erin.
 2. Beslissen hoe Els woorden aanlevert (zie vraag 1). Daarna de import bouwen.
 3. Wedstrijd-modus: relay op een Cloudflare Durable Object (in-memory, geen opslag), roomcode,
    nepnamen, opnieuw verbinden na schermvergrendeling, scores vooral op goed en een kleine snelheidsbonus.
+
+## 2026-10-09 (middag) — Antwoorden van Els
+
+| Vraag | Antwoord Els | Gevolg |
+|---|---|---|
+| Woorden en plaatjes uploaden, of alleen Excel? | Alleen Excel is prima | Geen docentenpagina. Plaatjes zijn ons werk, niet het hare: een aparte koppellijst *woord → plaatje* in de repo, ingevuld door de bouwer en gescreend door fabel. De app leest haar .xlsx direct, zonder omzetten. De lezer wordt pas gebouwd als haar bestanden er zijn, zodat hij past op hoe ze werkelijk werkt. |
+| Varkensvlees in woorden of namen? | Ja, dat mag | Geen extra filter. Frikandel mag in de namenpool van Wedstrijd. |
+| iPhone of Android? | Geen idee, allebei | Het Android-stemprobleem is reëel. Bij de pilot eerst checken of de luistervragen werken op de Androids. Terugvaloptie: eenmalig gegenereerde geluidsbestanden. |
+| Apart de/het-spel? | Nee, hoeft niet | Geen de/het-ronde in Wedstrijd. De de/het-vraagvorm in Oefenen blijft voorlopig als één van de vijf vormen. **Open:** navragen of Els die ook weg wil (één regel code). |
+| Welke thema's / Excel-bestand? | Ze stuurt een aantal woordenlijsten | Wachten op de bestanden. |
+
+### Volgende stappen
+
+1. Woordenlijsten van Els binnen → xlsx-lezer bouwen die past op haar format.
+2. Koppellijst woord → plaatje voor haar woorden, gescreend op de uitsluitingen uit de brief.
+3. GitHub Pages aanzetten, zodat het op echte telefoons getest kan worden (offline, stemmen, Android).
+4. Wedstrijd-modus: relay op een Cloudflare Durable Object (in-memory, geen opslag).
