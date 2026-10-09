@@ -389,3 +389,13 @@ Opgelost:
 - Service worker naar `v10`.
 
 **Nog niet bevestigd:** de preview-browser van de bouwer speelt geen geluid af. Marieke test opnieuw op de MacBook.
+
+**Bevestigd door Marieke (Safari, privévenster):** geluidstest, "Welkom in de studio!" en geluid in het spel
+werken. Stem Xander (nl-NL); volgens Marieke "klinkt als een corpsbal". Blijft: Ellen is Vlaams (nl-BE),
+en voor NT2 in Nederland is nl-NL het betere voorbeeld. Op een Windows-digibord wordt het waarschijnlijk
+een Microsoft-stem.
+
+**Bijvangst:** in Mariekes gewone Safari-venster opende de studio-link het oefenscherm, in een privévenster
+niet. Waarschijnlijk de geïnstalleerde web-app (Safari "Zet in Dock") die links binnen zijn bereik opvangt,
+of een oude cache. Niet aangepast: Els opent de studio op een digibord zonder geïnstalleerde app.
+Als het daar toch gebeurt: de studio een eigen adres buiten het bereik van de app geven.
