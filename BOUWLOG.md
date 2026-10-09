@@ -167,3 +167,13 @@ Samenvatting van fabels review. fabel mag dit vervangen door haar eigen tekst.
 - "Tjonge jonge…" weg, ook uit het eindscherm. De fout-pool is uitgebreid met "Oeps!", "Ai ai ai!"
   en "Volgende keer beter!".
 - Lidwoord buiten de haken staat nu als richtlijn in de README.
+
+## 2026-10-09 (avond) — Online, en eerste test op een echte telefoon
+
+- **GitHub Pages staat aan:** https://amsfort-engels.github.io/jeetjemineetje/
+- Service worker activeert op https (lokaal lukte dat niet in de preview-browser van de bouwer).
+- **Test Marieke, Android:** werkt online én in vliegtuigmodus, geluid werkt, installeren op het
+  beginscherm werkt. Oordeel: "heel intuïtief".
+- **Kanttekening:** Mariekes telefoon staat vrijwel zeker op Nederlands, dus de Nederlandse stem is
+  standaard aanwezig. Bij leerlingen met een telefoon in het Arabisch, Tigrinya of Dari kan die ontbreken.
+  Dit blijft het eerste controlepunt in de pilot.
