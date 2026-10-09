@@ -1,7 +1,6 @@
 import { loadWords, groupByTheme, isImageFile, splitZin, plainZin } from './data.js';
 import * as leitner from './leitner.js';
 import { isCorrect, isAlmost } from './answer.js';
-import { misspellings } from './spelling.js';
 import { uitroep } from './uitroepen.js';
 import { initSpeech, hasDutchVoice, speak } from './speech.js';
 
@@ -89,23 +88,30 @@ function home() {
 // are abstract (premie, verantwoordelijk), so sound, sentences and spelling
 // carry the app; pictures are a bonus for the few concrete words.
 // New words get recognition; known words get production (typing).
-function questionType(word) {
-  const box = leitner.boxOf(word.id);
+function possibleTypes(word) {
   const voice = hasDutchVoice();
-  const can = {
+  return {
     luister: voice,
     zin: !!splitZin(word.zin),
     plaatje: !!word.beeld,
-    spelling: true,
+    spelling: word.spelfouten.length >= 2,
     dehet: !!word.lidwoord,
     dictee: voice,
     zintyp: !!splitZin(word.zin),
   };
+}
+
+// Null when nothing fits this word on this phone (e.g. no Dutch voice and
+// no sentence yet); such words are left out of the round.
+function questionType(word) {
+  const box = leitner.boxOf(word.id);
+  const can = possibleTypes(word);
   const tiers = box <= 1 ? ['luister', 'zin', 'plaatje', 'spelling']
               : box === 2 ? ['luister', 'zin', 'spelling', 'dehet', 'dictee']
               : ['dictee', 'zintyp', 'dehet', 'zin'];
   const types = tiers.filter(t => can[t]);
-  return types.length ? types[Math.floor(Math.random() * types.length)] : 'spelling';
+  if (!types.length) types.push(...Object.keys(can).filter(t => can[t]));
+  return types.length ? types[Math.floor(Math.random() * types.length)] : null;
 }
 
 // Three other words from the theme, preferring the same kind (noun or not).
@@ -118,7 +124,7 @@ function otherWords(word, pool, n = 3) {
 }
 
 function startRound(naam) {
-  const words = themes.get(naam);
+  const words = themes.get(naam).filter(w => questionType(w) !== null);
   const round = leitner.startRound(naam);
   const state = {
     naam, words, round,
@@ -154,7 +160,7 @@ function ask(state) {
       type: 'text', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off',
       spellcheck: 'false', lang: 'nl', 'aria-label': label, enterkeyhint: 'done',
     });
-    setTimeout(() => input.focus(), 50);
+    input.setAttribute('aria-describedby', 'opdracht vraag');
     return h('form', { class: 'typ', onsubmit: e => {
       e.preventDefault();
       if (!input.value.trim()) return input.focus();
@@ -185,7 +191,7 @@ function ask(state) {
   } else if (type === 'spelling') {
     const options = leitner.shuffle([
       { label: word.woord, goed: true },
-      ...misspellings(word.woord).map(m => ({ label: m, goed: false })),
+      ...word.spelfouten.map(m => ({ label: m, goed: false })),
     ]);
     const prompt = hasDutchVoice() ? listenBox()
       : splitZin(word.zin) ? h('div', { class: 'vraag zin-vraag' }, zinMetGat(word)) : null;
@@ -209,6 +215,17 @@ function ask(state) {
   }
 
   show(progress, h('main', { class: 'scherm' }, body), h('div', { id: 'feedback', 'aria-live': 'polite' }));
+
+  // Move focus to the new question, so keyboard and screen-reader users
+  // don't fall back to the top of the page. Typing questions focus the
+  // input, which is described by the instruction and the question.
+  const opdracht = app.querySelector('.opdracht');
+  opdracht.id = 'opdracht';
+  opdracht.tabIndex = -1;
+  const vraag = app.querySelector('.vraag');
+  if (vraag) vraag.id = 'vraag';
+  const input = app.querySelector('.typ input');
+  setTimeout(() => (input || opdracht).focus({ preventScroll: true }), 50);
 }
 
 function markChoice(button, correct) {

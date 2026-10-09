@@ -31,7 +31,7 @@ export function rowsToWords(rows) {
   const col = name => header.indexOf(name);
   const idx = {
     thema: col('thema'), woord: col('woord'), lidwoord: col('lidwoord'),
-    zin: col('voorbeeldzin'), beeld: col('afbeelding'),
+    zin: col('voorbeeldzin'), beeld: col('afbeelding'), fouten: col('spelfouten'),
   };
   const get = (r, i) => (i >= 0 && r[i] ? r[i].trim() : '');
 
@@ -42,6 +42,8 @@ export function rowsToWords(rows) {
       lidwoord: get(r, idx.lidwoord).toLowerCase(),
       zin: get(r, idx.zin),
       beeld: get(r, idx.beeld),
+      // Reviewed wrong spellings, from data/spelfouten.csv via the importer.
+      spelfouten: get(r, idx.fouten).split('|').filter(Boolean),
     }))
     .filter(w => w.thema && w.woord)
     .map(w => ({ ...w, id: `${w.thema}::${w.woord}` }));

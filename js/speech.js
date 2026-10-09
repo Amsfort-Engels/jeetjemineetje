@@ -2,6 +2,10 @@
 // Not every phone has one — many Androids need the Dutch voice downloaded —
 // so we detect it and say so plainly instead of reading Dutch with an
 // English voice.
+//
+// Only voices that run on the device itself (localService). A remote voice
+// (e.g. "Google Nederlands" in desktop Chrome) sends the text to a speech
+// server, which breaks "nothing leaves the phone" and fails offline anyway.
 
 let voice = null;
 let ready;
@@ -12,8 +16,9 @@ export function initSpeech() {
     if (!('speechSynthesis' in window)) return resolve(null);
     const pick = () => {
       const voices = speechSynthesis.getVoices();
-      voice = voices.find(v => v.lang === 'nl-NL') ||
-              voices.find(v => v.lang?.toLowerCase().startsWith('nl')) || null;
+      const local = voices.filter(v => v.localService);
+      voice = local.find(v => v.lang === 'nl-NL') ||
+              local.find(v => v.lang?.toLowerCase().replace('_', '-').startsWith('nl')) || null;
       return voices.length > 0;
     };
     if (pick()) return resolve(voice);

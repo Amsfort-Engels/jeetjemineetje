@@ -177,3 +177,28 @@ Samenvatting van fabels review. fabel mag dit vervangen door haar eigen tekst.
 - **Kanttekening:** Mariekes telefoon staat vrijwel zeker op Nederlands, dus de Nederlandse stem is
   standaard aanwezig. Bij leerlingen met een telefoon in het Arabisch, Tigrinya of Dari kan die ontbreken.
   Dit blijft het eerste controlepunt in de pilot.
+
+## 2026-10-09 (avond) — Review Astra, en wat ermee gedaan is
+
+Astra (Codex) reviewde commit `d0d4259`: vijf bevindingen, alle vijf gereproduceerd. Allemaal opgelost.
+
+| # | Bevinding Astra | Oplossing |
+|---|---|---|
+| 1 (P1) | `speech.js` koos ook een **stem op afstand** (bv. "Google Nederlands" in desktop-Chrome). Woorden gaan dan naar een spraakserver, en offline werkt het niet. | Alleen stemmen met `localService === true`. Geen lokale Nederlandse stem → dezelfde melding als nu, zonder luistervragen. |
+| 2 | `sw.js` cachete ook **foutantwoorden** (503). Daarna werkte de app offline niet meer. | Alleen `res.ok` vervangt de cache. Bij een fout: de oude kopie. Cache-schrijven valt onder `e.waitUntil`. |
+| 3 | `sw.js` gooide **caches van andere sites** op `amsfort-engels.github.io` weg. | Opruimen alleen bij eigen namen (`jeetjemineetje-*`, plus de oude `jm-v1`/`jm-v2`). Versie → `jeetjemineetje-v3`. |
+| 4 | **"Spelfouten" die echte woorden zijn**: *verbaasd → verbaast*, *vergoeden → vergoedden*. Zelfde klank, dus niet te onderscheiden. | De generator is uit de app gehaald. De importer maakt kandidaten één keer aan in `data/spelfouten.csv`, een mens controleert ze, en de app gebruikt alleen dat bestand. Regels aangescherpt: geen d/t aan het eind, geen verdubbeling na lange klinker of tweeklank. Alle 123 met de hand nagelopen. Daarbij nog gevonden: *Gina* (naam, en ch is hier sj), *zaken*, *knaap*, *fallen* (Engels). Afkortingen (*vmbo*) krijgen geen spelvraag. Op een paar plekken echte NT2-fouten ingezet: *nivo*, *initsiatief*, *geldich*, *respekt*, *houswerk*. |
+| 5 | Na "Verder" viel de **focus terug naar `BODY`**. Toetsenbord- en schermlezergebruikers raakten hun plek kwijt. | Focus gaat naar de opdracht van de nieuwe vraag (`tabindex=-1`). Bij typvragen naar het invoerveld, met `aria-describedby` naar opdracht en vraag. |
+
+Verder:
+- Een woord waarvoor op deze telefoon geen enkele vraagvorm past (geen stem, geen zin, geen spelfouten)
+  valt uit de ronde. Eerder was er een terugval die kon crashen.
+- README definieert nu precies wat "geen persoonsgegevens" betekent: niets van leerlingen. De voornaam van
+  de docent staat wel in de documentatie (akkoord Marieke).
+- Astra merkte terecht op dat de Leitner-intervallen voorrang zijn, geen wachttijd: rondes worden
+  aangevuld met woorden die nog niet aan de beurt zijn. Bewust zo gelaten: een thema van 25 woorden
+  moet altijd een volle ronde kunnen geven.
+- Getest: 30 automatische rondes over alle lijsten. Geen dubbele opties, altijd precies één goed
+  antwoord, focus goed na elke vraag. Op de Mac zijn Ellen en Xander `localService=true`.
+- **Niet getest:** het 503-scenario uit bevinding 2 (lokaal registreert de service worker niet in de
+  preview-browser van de bouwer). Astra, als je dit opnieuw wilt draaien: graag.

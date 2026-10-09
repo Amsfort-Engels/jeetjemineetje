@@ -1,7 +1,8 @@
 # Jeetje Mineetje
 
 Woordenschat-app voor de NT2-klas van Els. Alleen Nederlands, niveau A2–B1 (Linkmethode), op de eigen telefoon.
-Geen accounts, geen namen, geen persoonsgegevens.
+Geen accounts. Geen gegevens van leerlingen: geen namen, geen antwoorden, geen voortgang op een server.
+Voortgang staat alleen op de eigen telefoon. (De documentatie noemt wel de voornaam van de docent.)
 
 De opdracht staat in fabels [Bouwbrief](https://claude.ai/artifact/2Ev9dySEkTicaXrVuux9jY).
 Keuzes en afwijkingen staan in [BOUWLOG.md](BOUWLOG.md).
@@ -36,6 +37,11 @@ Voorbeeldzinnen en plaatjes staan niet in Els' bestanden maar in `data/aanvullin
 (`woord;voorbeeldzin;afbeelding`), beheerd door ons en gecontroleerd door Els. Het geoefende
 woord staat in de zin tussen [haken]: `Neem op de rotonde de tweede [afslag].`
 
+Foute spellingen voor de spelvraag staan in `data/spelfouten.csv` (`woord;fouten`, gescheiden door `|`).
+De importer bedenkt ze voor nieuwe woorden. **Daarna controleert een mens ze**: geen echte Nederlandse
+woorden (*zaken*, *knaap*), geen namen, geen vormen die net zo klinken én goed zijn (*verbaast*).
+Eenmaal in het bestand worden ze nooit opnieuw gegenereerd, dus correcties blijven staan.
+
 **Richtlijn voor zinnen:** precies één woord uit de lijst moet passen. "Je mag hier niet [parkeren]"
 werkt, omdat "hier" de andere werkwoorden uitsluit. Zet het lidwoord bewust *buiten* de haken
 ("Bij het [kruispunt]"): dat sluit de-woorden als afleider al uit. Geen geweld, dood of familie.
@@ -50,6 +56,5 @@ werkt, omdat "hier" de andere werkwoorden uitsluit. Zet het lidwoord bewust *bui
 | `js/uitroepen.js` | alle feedbackteksten |
 | `js/speech.js` | uitspraak via de Nederlandse stem van de telefoon |
 | `js/data.js` | CSV inlezen, zinnen met [gat] |
-| `js/spelling.js` | geloofwaardige spelfouten (ij/ei, aa/a, dubbele medeklinkers…) |
 | `tools/importeer.py` | Excel-lijsten van Els → `data/woorden.csv` |
 | `sw.js` | offline gebruik (verhoog `VERSION` bij elke release) |
