@@ -290,7 +290,7 @@ Wrangler (de Cloudflare-CLI) heeft Node nodig, en die staat niet op deze Mac. Vo
 - [ ] Hergebruikte roomcode (oude tokens komen niet binnen)
 - [ ] Telefoonklok verzet (mag niets uitmaken)
 - [ ] Lobby overspoelen met verbindingen
-- [ ] Logging staat echt uit (dashboard gecontroleerd)
+- [x] Logging staat echt uit (dashboard gecontroleerd door Marieke, 10 oktober)
 - [ ] Eén telefoon op de school-wifi verbindt met de relay (WebSockets komen door)
 
 ---

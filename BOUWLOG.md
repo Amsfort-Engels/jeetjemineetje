@@ -399,3 +399,6 @@ een Microsoft-stem.
 niet. Waarschijnlijk de geïnstalleerde web-app (Safari "Zet in Dock") die links binnen zijn bereik opvangt,
 of een oude cache. Niet aangepast: Els opent de studio op een digibord zonder geïnstalleerde app.
 Als het daar toch gebeurt: de studio een eigen adres buiten het bereik van de app geven.
+
+**Cloudflare-dashboard gecontroleerd door Marieke:** Logs en Traces staan uit voor `jeetjemineetje-relay`.
+Afgevinkt in het testplan.
