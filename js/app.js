@@ -1,6 +1,7 @@
-import { loadWords, groupByTheme, isImageFile } from './data.js';
+import { loadWords, groupByTheme, isImageFile, splitZin, plainZin } from './data.js';
 import * as leitner from './leitner.js';
 import { isCorrect, isAlmost } from './answer.js';
+import { misspellings } from './spelling.js';
 import { uitroep } from './uitroepen.js';
 import { initSpeech, hasDutchVoice, speak } from './speech.js';
 
@@ -29,7 +30,7 @@ function beeld(word, size = 'groot') {
   if (isImageFile(word.beeld)) {
     return h('img', { class: `beeld ${size}`, src: `data/beelden/${word.beeld}`, alt: '' });
   }
-  return h('span', { class: `beeld ${size}`, 'aria-hidden': 'true' }, word.beeld || '❓');
+  return h('span', { class: `beeld ${size}`, 'aria-hidden': 'true' }, word.beeld);
 }
 
 const metLidwoord = w => (w.lidwoord ? `${w.lidwoord} ${w.woord}` : w.woord);
@@ -39,13 +40,29 @@ function speakButton(text, label = 'Luister') {
   return h('button', { class: 'luister', type: 'button', onclick: () => speak(text), 'aria-label': label }, '🔊');
 }
 
+// "Thema 5, taak 2" -> "5.2", for the badge on the theme card.
+function badge(naam) {
+  const m = /(\d+)\D+(\d+)/.exec(naam);
+  return m ? `${m[1]}.${m[2]}` : naam.slice(0, 2);
+}
+
+// The sentence with the practised word as a gap, or highlighted.
+function zinMetGat(word, fill = null) {
+  const z = splitZin(word.zin);
+  return h('span', { class: 'zin-tekst' },
+    z.voor,
+    fill === null ? h('span', { class: 'gat', 'aria-label': 'leeg' }, '…')
+                  : h('b', {}, fill),
+    z.na);
+}
+
 // ---------- home ----------
 
 function home() {
   const cards = [...themes].map(([naam, words]) => {
     const known = leitner.knownCount(words);
     return h('button', { class: 'thema', type: 'button', onclick: () => startRound(naam) },
-      beeld(words[0], 'klein'),
+      h('span', { class: 'badge', 'aria-hidden': 'true' }, badge(naam)),
       h('span', { class: 'thema-naam' }, naam),
       h('span', { class: 'thema-stand' }, `${known} / ${words.length}`),
       h('span', { class: 'balk', 'aria-hidden': 'true' },
@@ -68,26 +85,36 @@ function home() {
 
 // ---------- round ----------
 
+// Which question kinds fit this word right now. Most words in Els's lists
+// are abstract (premie, verantwoordelijk), so sound, sentences and spelling
+// carry the app; pictures are a bonus for the few concrete words.
+// New words get recognition; known words get production (typing).
 function questionType(word) {
   const box = leitner.boxOf(word.id);
-  let types = box <= 1 ? ['luister', 'lees', 'plaatje']
-            : box === 2 ? ['luister', 'plaatje', 'dehet']
-            : ['typ', 'dehet', 'plaatje', 'typ'];
-  if (!hasDutchVoice()) types = types.filter(t => t !== 'luister');
-  if (!word.lidwoord) types = types.filter(t => t !== 'dehet');
-  return types[Math.floor(Math.random() * types.length)];
+  const voice = hasDutchVoice();
+  const can = {
+    luister: voice,
+    zin: !!splitZin(word.zin),
+    plaatje: !!word.beeld,
+    spelling: true,
+    dehet: !!word.lidwoord,
+    dictee: voice,
+    zintyp: !!splitZin(word.zin),
+  };
+  const tiers = box <= 1 ? ['luister', 'zin', 'plaatje', 'spelling']
+              : box === 2 ? ['luister', 'zin', 'spelling', 'dehet', 'dictee']
+              : ['dictee', 'zintyp', 'dehet', 'zin'];
+  const types = tiers.filter(t => can[t]);
+  return types.length ? types[Math.floor(Math.random() * types.length)] : 'spelling';
 }
 
-function distractors(word, pool, n = 3) {
-  const seen = new Set([word.beeld]);
-  const out = [];
-  for (const w of leitner.shuffle(pool)) {
-    if (w.id === word.id || seen.has(w.beeld)) continue;
-    seen.add(w.beeld);
-    out.push(w);
-    if (out.length === n) break;
-  }
-  return leitner.shuffle([word, ...out]);
+// Three other words from the theme, preferring the same kind (noun or not).
+function otherWords(word, pool, n = 3) {
+  const isNoun = w => !!w.lidwoord;
+  const others = leitner.shuffle(pool.filter(w => w.woord !== word.woord));
+  const same = others.filter(w => isNoun(w) === isNoun(word));
+  const picked = [...same, ...others.filter(w => !same.includes(w))].slice(0, n);
+  return leitner.shuffle([word, ...picked]);
 }
 
 function startRound(naam) {
@@ -104,7 +131,7 @@ function startRound(naam) {
 function ask(state) {
   const word = state.queue[state.i];
   const type = questionType(word);
-  const answered = correct => feedback(state, word, correct);
+  const answered = (correct, almost = false) => feedback(state, word, correct, almost);
 
   const progress = h('div', { class: 'voortgang' },
     h('button', { class: 'stop', type: 'button', onclick: home, 'aria-label': 'Stoppen' }, '✕'),
@@ -112,59 +139,73 @@ function ask(state) {
       h('span', { style: `width:${(state.i / state.queue.length) * 100}%` })),
     h('span', { class: 'teller' }, `${state.i + 1}/${state.queue.length}`));
 
-  const choices = (options, render) => h('div', { class: 'keuzes' },
+  // A grid of answer buttons; `options` are { label, goed } pairs.
+  const choices = (options, cls = '') => h('div', { class: `keuzes ${cls}` },
     options.map(o => h('button', {
-      class: 'keuze', type: 'button', 'data-goed': o.id === word.id,
-      onclick: e => { markChoice(e.currentTarget, o.id === word.id); answered(o.id === word.id); },
-    }, render(o))));
+      class: 'keuze', type: 'button', 'data-goed': o.goed,
+      onclick: e => { markChoice(e.currentTarget, o.goed); answered(o.goed); },
+    }, typeof o.label === 'string' ? h('span', { class: 'keuze-woord' }, o.label) : o.label)));
 
-  let body;
-  if (type === 'luister') {
-    body = [
-      h('p', { class: 'opdracht' }, 'Luister. Welk plaatje?'),
-      h('div', { class: 'vraag' }, h('button', { class: 'luister groot', type: 'button', onclick: () => speak(word.woord) }, '🔊')),
-      choices(distractors(word, state.words), o => beeld(o, 'middel')),
-    ];
-    setTimeout(() => speak(word.woord), 300);
-  } else if (type === 'lees') {
-    body = [
-      h('p', { class: 'opdracht' }, 'Lees. Welk plaatje?'),
-      h('div', { class: 'vraag' }, h('span', { class: 'woord' }, word.woord)),
-      choices(distractors(word, state.words), o => beeld(o, 'middel')),
-    ];
-  } else if (type === 'plaatje') {
-    body = [
-      h('p', { class: 'opdracht' }, 'Welk woord?'),
-      h('div', { class: 'vraag' }, beeld(word)),
-      choices(distractors(word, state.words), o => h('span', { class: 'keuze-woord' }, o.woord)),
-    ];
-  } else if (type === 'dehet') {
-    const pick = lw => e => { markChoice(e.currentTarget, lw === word.lidwoord); answered(lw === word.lidwoord); };
-    body = [
-      h('p', { class: 'opdracht' }, 'De of het?'),
-      h('div', { class: 'vraag' }, beeld(word), h('span', { class: 'woord' }, `… ${word.woord}`)),
-      h('div', { class: 'keuzes twee' },
-        h('button', { class: 'keuze', type: 'button', 'data-goed': word.lidwoord === 'de', onclick: pick('de') }, h('span', { class: 'keuze-woord' }, 'de')),
-        h('button', { class: 'keuze', type: 'button', 'data-goed': word.lidwoord === 'het', onclick: pick('het') }, h('span', { class: 'keuze-woord' }, 'het'))),
-    ];
-  } else {
+  const wordChoices = () => choices(
+    otherWords(word, state.words).map(o => ({ label: o.woord, goed: o.woord === word.woord })));
+
+  const typeForm = (target, label) => {
     const input = h('input', {
       type: 'text', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off',
-      spellcheck: 'false', lang: 'nl', 'aria-label': 'Typ het woord', enterkeyhint: 'done',
+      spellcheck: 'false', lang: 'nl', 'aria-label': label, enterkeyhint: 'done',
     });
-    const form = h('form', { class: 'typ', onsubmit: e => {
+    setTimeout(() => input.focus(), 50);
+    return h('form', { class: 'typ', onsubmit: e => {
       e.preventDefault();
       if (!input.value.trim()) return input.focus();
       input.disabled = true;
-      if (isCorrect(input.value, word.woord)) answered(true);
-      else feedback(state, word, false, isAlmost(input.value, word.woord));
+      e.currentTarget.querySelector('button').disabled = true;
+      const ok = isCorrect(input.value, target);
+      answered(ok, !ok && isAlmost(input.value, target));
     } }, input, h('button', { type: 'submit', class: 'knop' }, 'Klaar'));
+  };
+
+  const listenBox = () => {
+    setTimeout(() => speak(word.woord), 300);
+    return h('div', { class: 'vraag' },
+      h('button', { class: 'luister groot', type: 'button', onclick: () => speak(word.woord), 'aria-label': 'Luister nog een keer' }, '🔊'));
+  };
+
+  let body;
+  if (type === 'luister') {
+    body = [h('p', { class: 'opdracht' }, 'Luister. Welk woord hoor je?'), listenBox(), wordChoices()];
+  } else if (type === 'zin') {
     body = [
-      h('p', { class: 'opdracht' }, 'Typ het woord.'),
-      h('div', { class: 'vraag' }, beeld(word), speakButton(word.woord)),
-      form,
+      h('p', { class: 'opdracht' }, 'Welk woord past?'),
+      h('div', { class: 'vraag zin-vraag' }, zinMetGat(word)),
+      wordChoices(),
     ];
-    setTimeout(() => input.focus(), 50);
+  } else if (type === 'plaatje') {
+    body = [h('p', { class: 'opdracht' }, 'Welk woord?'), h('div', { class: 'vraag' }, beeld(word)), wordChoices()];
+  } else if (type === 'spelling') {
+    const options = leitner.shuffle([
+      { label: word.woord, goed: true },
+      ...misspellings(word.woord).map(m => ({ label: m, goed: false })),
+    ]);
+    const prompt = hasDutchVoice() ? listenBox()
+      : splitZin(word.zin) ? h('div', { class: 'vraag zin-vraag' }, zinMetGat(word)) : null;
+    body = [h('p', { class: 'opdracht' }, 'Welk woord is goed geschreven?'), prompt, choices(options, 'een-kolom')];
+  } else if (type === 'dehet') {
+    body = [
+      h('p', { class: 'opdracht' }, 'De of het?'),
+      h('div', { class: 'vraag' }, word.beeld ? beeld(word) : null, h('span', { class: 'woord' }, `… ${word.woord}`)),
+      choices([{ label: 'de', goed: word.lidwoord === 'de' }, { label: 'het', goed: word.lidwoord === 'het' }], 'twee'),
+    ];
+  } else if (type === 'dictee') {
+    body = [h('p', { class: 'opdracht' }, 'Luister. Typ het woord.'), listenBox(), typeForm(word.woord, 'Typ het woord')];
+  } else {
+    const gat = splitZin(word.zin).gat;
+    body = [
+      h('p', { class: 'opdracht' }, 'Typ het woord dat past.'),
+      h('div', { class: 'vraag zin-vraag' }, zinMetGat(word),
+        h('span', { class: 'hint' }, `Begint met ${gat[0].toLowerCase()} · ${gat.length} letters`)),
+      typeForm(gat, 'Typ het woord dat past'),
+    ];
   }
 
   show(progress, h('main', { class: 'scherm' }, body), h('div', { id: 'feedback', 'aria-live': 'polite' }));
@@ -190,10 +231,12 @@ function feedback(state, word, correct, almost = false) {
     ask(state);
   };
 
+  const z = splitZin(word.zin);
   const panel = h('div', { class: `paneel ${correct ? 'goed' : 'fout'}` },
     h('p', { class: 'uitroep' }, uitroep(soort)),
-    h('p', { class: 'antwoord' }, beeld(word, 'klein'), ' ', h('b', {}, metLidwoord(word)), speakButton(metLidwoord(word))),
-    word.zin ? h('p', { class: 'zin' }, word.zin, speakButton(word.zin, 'Luister naar de zin')) : null,
+    h('p', { class: 'antwoord' }, word.beeld ? beeld(word, 'klein') : null,
+      h('b', {}, metLidwoord(word)), speakButton(metLidwoord(word))),
+    z ? h('p', { class: 'zin' }, zinMetGat(word, z.gat), speakButton(plainZin(word.zin), 'Luister naar de zin')) : null,
     h('button', { class: 'knop verder', type: 'button', onclick: next }, last ? 'Klaar!' : 'Verder'),
   );
   document.getElementById('feedback').replaceChildren(panel);

@@ -101,7 +101,15 @@ button:disabled { cursor: default; }
   box-shadow: var(--schaduw);
 }
 .thema:active { transform: translateY(1px); }
-.thema .beeld { grid-row: 1 / 3; }
+.badge {
+  grid-row: 1 / 3;
+  display: grid; place-items: center;
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--geel); color: var(--geel-tekst);
+  font-weight: 900; font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
 .thema-naam { font-weight: 800; font-size: 1.15rem; }
 .thema-stand { font-size: 0.9rem; color: var(--inkt-zacht); font-variant-numeric: tabular-nums; }
 .thema .balk { grid-column: 2 / 4; }
@@ -155,6 +163,14 @@ img.beeld.klein { width: 40px; height: 40px; }
   border: 2px solid var(--lijn);
   padding: 16px;
 }
+.zin-vraag { text-align: center; font-size: 1.35rem; font-weight: 600; line-height: 1.5; }
+.gat {
+  display: inline-block; min-width: 4.5em;
+  border-bottom: 3px solid var(--blauw);
+  color: transparent;
+}
+.hint { font-size: 0.9rem; font-weight: 400; color: var(--inkt-zacht); }
+.zin b { color: var(--inkt); font-style: normal; }
 .woord { font-size: 2.2rem; font-weight: 900; letter-spacing: -0.01em; }
 
 .keuzes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -172,6 +188,8 @@ img.beeld.klein { width: 40px; height: 40px; }
 .keuze:disabled:not(.goed):not(.fout) { opacity: 0.45; }
 .keuze.goed { border-color: var(--goed); background: var(--goed-bg); }
 .keuze.fout { border-color: var(--fout); background: var(--fout-bg); animation: schud 0.3s; }
+.keuzes.een-kolom { grid-template-columns: 1fr; }
+.keuzes.een-kolom .keuze { min-height: 64px; }
 .keuze-woord { font-size: 1.35rem; font-weight: 800; overflow-wrap: anywhere; }
 .keuzes.twee .keuze-woord { font-size: 1.8rem; }
 

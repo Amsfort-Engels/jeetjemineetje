@@ -78,3 +78,62 @@ nog open staat. Bedoeld voor review door fabel en Astra. Correcties ernaast, nie
 2. Koppellijst woord → plaatje voor haar woorden, gescreend op de uitsluitingen uit de brief.
 3. GitHub Pages aanzetten, zodat het op echte telefoons getest kan worden (offline, stemmen, Android).
 4. Wedstrijd-modus: relay op een Cloudflare Durable Object (in-memory, geen opslag).
+
+## 2026-10-09 (avond) — De echte woordenlijsten
+
+Els stuurde vijf lijsten: Thema 4 taak 4, Thema 5 taak 1–4. Samen 123 woorden.
+
+### Wat de lijsten lieten zien
+
+- **Niveau A2–B1, niet A1–A2.** De hyperlinks in de bestanden wijzen naar `a2b1.linkmethode.nl`.
+  Woorden als *verantwoordelijkheid*, *zorgverzekeraar*, *werkgelegenheid*.
+  **De bouwbrief zegt A1–A2. Dat moet daar gecorrigeerd worden.**
+- **De meeste woorden zijn abstract.** *premie, noodzakelijk, verbaasd, initiatief, moeizaam.*
+  Het uitgangspunt van de brief, "beeld + klank + Nederlands", werkt voor misschien 15 van de 123.
+  Plaatjes zijn daarom een bijzaak geworden. Klank, zinnen en spelling dragen de app.
+- **Format:** één kolom, woordenboekstijl (`afslag, de`, soms `de praktijk`), geen kopregel,
+  soms begint de lijst op rij 2. Geen zinnen, geen plaatjes. De themanaam is de bestandsnaam.
+- **Els' naam staat in de metadata** van elk bestand. De ruwe bestanden gaan daarom niet
+  in de (openbare) repo. Alleen de omgezette `data/woorden.csv` wordt gecommit.
+
+### Gebouwd
+
+- `tools/importeer.py`: Excel → `data/woorden.csv`, alleen standaard-Python. Wijkt af van de
+  brief ("de app importeert haar bestand"): de import gebeurt vóór publicatie, niet in de browser.
+  Voordeel: de app blijft simpel, en reviewers kunnen in de csv precies zien wat leerlingen krijgen.
+- `data/aanvulling.csv`: voorbeeldzinnen en plaatjes, los van Els' bestanden. Het geoefende woord
+  staat tussen [haken], zodat de app er een gat van kan maken.
+- **Proefzinnen voor Thema 5, taak 2** (rijles, 24 zinnen), geschreven in de context van het thema.
+  Eerst laten beoordelen door Els, daarna pas de andere 99.
+- **Nieuwe vraagvormen**, passend bij abstracte woorden:
+  - *luister*: hoor het woord, kies uit vier geschreven woorden
+  - *zin*: zin met gat, kies het woord dat past (alleen met voorbeeldzin)
+  - *spelling*: hoor het woord, kies de goede spelling uit vier. De foute opties zijn
+    geloofwaardige NT2-fouten (ij/ei, aa/a, dubbele medeklinker, g/ch, d/t, f/v).
+    Letters omwisselen alleen als opvulling bij korte woorden.
+  - *dictee*: hoor het woord, typ het
+  - *zintyp*: zin met gat, typ het woord, met eerste letter en aantal letters als hint
+  - *dehet* en *plaatje* blijven, maar alleen waar ze kunnen
+- Afleiders kiezen bij voorkeur dezelfde woordsoort (zelfstandig naamwoord of niet).
+- Themakaart toont "5.2" in plaats van een emoji.
+- Getest: 40 automatische rondes over alle vijf lijsten. Geen fouten, geen dubbele opties,
+  altijd precies één goed antwoord.
+
+### Voor Els (via Marieke)
+
+1. **Proefzinnen Thema 5, taak 2** (in `data/aanvulling.csv`): goed zo? Te makkelijk of te moeilijk?
+   Klopt de betekenis met hoe het woord in de methode gebruikt wordt?
+2. **Mogen wij de zinnen voor de andere vier lijsten schrijven**, of heeft zij zinnen uit de methode?
+3. **Gevoelige woorden in haar lijsten.** Haar materiaal, haar keuze. Maar wij schrijven er zinnen bij,
+   en willen dat goed doen:
+   - *vaderland*, *volkslied* (5.1): voor nieuwkomers kan dat beladen zijn
+   - *echtpaar* (5.3): raakt aan "geen familie" uit de brief
+   - *slaappil* (4.4)
+   Voorstel: neutrale zinnen over Nederland ("Het Nederlandse volkslied heet het Wilhelmus"),
+   of laat Els de zin zelf aanleveren.
+4. **Themanamen:** "Thema 5, taak 2" of een titel, zoals "Rijles"?
+
+### Overig
+
+- Halal frikandellen bestaan. Volgens Marieke. Genoteerd voor de namenpool.
+- De/het blijft een vraagvorm in Oefenen (zie vorige entry: nog navragen).

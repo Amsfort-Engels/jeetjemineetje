@@ -1,1 +1,4 @@
 .DS_Store
+# Els's original Excel files: they contain her name in the metadata, and the repo is public.
+# tools/importeer.py turns them into data/woorden.csv, which is committed.
+lijsten/

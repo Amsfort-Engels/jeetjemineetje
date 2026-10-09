@@ -62,6 +62,17 @@ export async function loadWords(url = 'data/woorden.csv') {
   return rowsToWords(parseCSV(await res.text()));
 }
 
+// Example sentences mark the practised word with [brackets]:
+// "Neem de tweede [afslag]." -> { voor: 'Neem de tweede ', gat: 'afslag', na: '.' }
+export function splitZin(zin) {
+  const m = /^(.*?)\[([^\]]+)\](.*)$/.exec(zin || '');
+  return m ? { voor: m[1], gat: m[2], na: m[3] } : null;
+}
+
+export function plainZin(zin) {
+  return (zin || '').replace(/[[\]]/g, '');
+}
+
 // An image cell is either a filename (kassa.jpg) or an emoji placeholder.
 export function isImageFile(beeld) {
   return /\.(jpe?g|png|webp|gif|svg)$/i.test(beeld);

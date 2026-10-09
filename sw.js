@@ -2,10 +2,10 @@
 // Word list: network first (so Els's updates arrive), cache as fallback.
 // Everything else: cache first. Bump VERSION on every release.
 
-const VERSION = 'jm-v1';
+const VERSION = 'jm-v2';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest', 'icon.svg',
-  'js/app.js', 'js/data.js', 'js/leitner.js', 'js/answer.js', 'js/uitroepen.js', 'js/speech.js',
+  'js/app.js', 'js/data.js', 'js/leitner.js', 'js/answer.js', 'js/spelling.js', 'js/uitroepen.js', 'js/speech.js',
   'data/woorden.csv',
 ];
 

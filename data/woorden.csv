@@ -1,41 +1,124 @@
 thema;woord;lidwoord;voorbeeldzin;afbeelding
-Boodschappen;appel;de;Ik eet een appel.;🍎
-Boodschappen;banaan;de;De banaan is geel.;🍌
-Boodschappen;brood;het;Ik koop brood bij de bakker.;🍞
-Boodschappen;kaas;de;Kaas komt uit Nederland.;🧀
-Boodschappen;melk;de;Ik drink melk.;🥛
-Boodschappen;ei;het;Ik eet een ei.;🥚
-Boodschappen;rijst;de;De rijst is warm.;🍚
-Boodschappen;tomaat;de;De tomaat is rood.;🍅
-Boodschappen;wortel;de;Een wortel is oranje.;🥕
-Boodschappen;aardappel;de;Ik koop een kilo aardappels.;🥔
-Boodschappen;ui;de;Ik snijd een ui.;🧅
-Boodschappen;citroen;de;De citroen is zuur.;🍋
-Boodschappen;druif;de;Ik eet een druif.;🍇
-Boodschappen;aardbei;de;De aardbei is zoet.;🍓
-Boodschappen;komkommer;de;De komkommer is groen.;🥒
-Boodschappen;koekje;het;Wil je een koekje?;🍪
-Boodschappen;pinda;de;Ik eet een pinda.;🥜
-Boodschappen;winkelwagen;de;De winkelwagen is vol.;🛒
-Boodschappen;bonnetje;het;Hier is uw bonnetje.;🧾
-Boodschappen;water;het;Ik drink water.;💧
-In de klas;boek;het;Ik lees een boek.;📖
-In de klas;pen;de;Mag ik een pen?;🖊️
-In de klas;potlood;het;Het potlood is kapot.;✏️
-In de klas;tas;de;Mijn tas is zwaar.;🎒
-In de klas;klok;de;De klok hangt aan de muur.;🕐
-In de klas;computer;de;De computer is aan.;💻
-In de klas;telefoon;de;Mijn telefoon is leeg.;📱
-In de klas;stoel;de;Ik zit op een stoel.;🪑
-In de klas;deur;de;Doe de deur dicht.;🚪
-In de klas;raam;het;Het raam is open.;🪟
-In de klas;lamp;de;De lamp is aan.;💡
-In de klas;papier;het;Ik schrijf op papier.;📄
-In de klas;sleutel;de;Waar is mijn sleutel?;🔑
-In de klas;bril;de;Ik heb een bril.;👓
-In de klas;liniaal;de;De liniaal is lang.;📏
-In de klas;kalender;de;Kijk op de kalender.;📅
-In de klas;krant;de;Ik lees de krant.;📰
-In de klas;envelop;de;De brief zit in de envelop.;✉️
-In de klas;schrift;het;Schrijf het in je schrift.;📓
-In de klas;map;de;Het papier zit in de map.;🗂️
+Thema 4, taak 4;aanvullend;;;
+Thema 4, taak 4;afschrijven;;;
+Thema 4, taak 4;afsluiten;;;
+Thema 4, taak 4;basisverzekering;de;;
+Thema 4, taak 4;eind;het;;
+Thema 4, taak 4;fysiotherapie;de;;
+Thema 4, taak 4;hoogte;de;;
+Thema 4, taak 4;medisch;;;
+Thema 4, taak 4;noodzakelijk;;;
+Thema 4, taak 4;onder;;;
+Thema 4, taak 4;opmaken;;;
+Thema 4, taak 4;optie;de;;
+Thema 4, taak 4;overmaken;;;
+Thema 4, taak 4;plus;;;
+Thema 4, taak 4;polis;de;;
+Thema 4, taak 4;premie;de;;
+Thema 4, taak 4;slaappil;de;;
+Thema 4, taak 4;vallen;;;
+Thema 4, taak 4;vaststellen;;;
+Thema 4, taak 4;verbaasd;;;
+Thema 4, taak 4;vergoeden;;;
+Thema 4, taak 4;verzekeraar;de;;
+Thema 4, taak 4;verzekeren;;;
+Thema 4, taak 4;zorgpremie;de;;
+Thema 4, taak 4;zorgverzekeraar;de;;
+Thema 5, taak 1;actief;;;
+Thema 5, taak 1;ambitie;de;;
+Thema 5, taak 1;betekenis;de;;
+Thema 5, taak 1;China;;;
+Thema 5, taak 1;Chinees;;;
+Thema 5, taak 1;competitief;;;
+Thema 5, taak 1;discipline;de;;
+Thema 5, taak 1;doordeweeks;;;
+Thema 5, taak 1;huiswerk;het;;
+Thema 5, taak 1;initiatief;het;;
+Thema 5, taak 1;instrument;het;;
+Thema 5, taak 1;lesdag;de;;
+Thema 5, taak 1;lesrooster;het;;
+Thema 5, taak 1;mbo'er;de;;
+Thema 5, taak 1;onbeleefd;;;
+Thema 5, taak 1;onderwijs;het;;
+Thema 5, taak 1;opzoeken;;;
+Thema 5, taak 1;presteren;;;
+Thema 5, taak 1;rekenmachine;de;;
+Thema 5, taak 1;respect;het;;
+Thema 5, taak 1;scholier;de;;
+Thema 5, taak 1;vaderland;het;;
+Thema 5, taak 1;verantwoordelijk;;;
+Thema 5, taak 1;verantwoordelijkheid;de;;
+Thema 5, taak 1;volkslied;het;;
+Thema 5, taak 2;achterin;;Jij mag [achterin] zitten, ik zit voorin.;
+Thema 5, taak 2;afrijden;;Volgende week moet ik [afrijden].;
+Thema 5, taak 2;afslag;de;Neem op de rotonde de tweede [afslag].;
+Thema 5, taak 2;autorijschool;de;Ik neem les bij een [autorijschool] in de stad.;
+Thema 5, taak 2;bestuurder;de;De [bestuurder] moet altijd goed opletten.;
+Thema 5, taak 2;praktijk;de;Na de theorie leer je rijden in de [praktijk].;
+Thema 5, taak 2;examinator;de;De [examinator] zit naast je in de auto.;
+Thema 5, taak 2;gordel;de;Doe je [gordel] om!;
+Thema 5, taak 2;kruispunt;het;Bij het [kruispunt] ga je linksaf.;
+Thema 5, taak 2;meerijden;;Mag ik met jou [meerijden] naar school?;
+Thema 5, taak 2;parkeerplaats;de;Ik zoek een [parkeerplaats] bij de winkel.;🅿️
+Thema 5, taak 2;parkeren;;Je mag hier niet [parkeren].;
+Thema 5, taak 2;rem;de;Trap op de [rem]!;
+Thema 5, taak 2;rijles;de;Ik heb elke dinsdag [rijles].;
+Thema 5, taak 2;rotonde;de;Op de [rotonde] ga je rechtsaf.;
+Thema 5, taak 2;schakelen;;In deze auto moet je zelf [schakelen].;
+Thema 5, taak 2;slagen;;Ik hoop dat ik ga [slagen] voor mijn examen!;
+Thema 5, taak 2;snelheid;de;In de stad is de [snelheid] maximaal 50 kilometer per uur.;
+Thema 5, taak 2;spiegel;de;Kijk eerst in je [spiegel].;
+Thema 5, taak 2;theorie;de;Eerst leer je de [theorie], daarna ga je rijden.;
+Thema 5, taak 2;versnelling;de;Zet de auto in de eerste [versnelling].;
+Thema 5, taak 2;voetganger;de;Let op die [voetganger] bij het zebrapad!;🚶
+Thema 5, taak 2;wegrijden;;Je mag pas [wegrijden] als het licht groen is.;
+Thema 5, taak 2;zakken;;Ik was bang om te [zakken], maar ik ben geslaagd!;
+Thema 5, taak 3;app;de;;
+Thema 5, taak 3;corrigeren;;;
+Thema 5, taak 3;echtpaar;het;;
+Thema 5, taak 3;herhalen;;;
+Thema 5, taak 3;klank;de;;
+Thema 5, taak 3;knap;;;
+Thema 5, taak 3;leerzaam;;;
+Thema 5, taak 3;methode;de;;
+Thema 5, taak 3;moeizaam;;;
+Thema 5, taak 3;nieuwsbericht;het;;
+Thema 5, taak 3;ondertiteling;de;;
+Thema 5, taak 3;opnemen;;;
+Thema 5, taak 3;serie;de;;
+Thema 5, taak 3;simpel;;;
+Thema 5, taak 3;taalcursus;de;;
+Thema 5, taak 3;uitbreiden;;;
+Thema 5, taak 3;uitspraak;de;;
+Thema 5, taak 3;uitspreken;;;
+Thema 5, taak 3;vereniging;de;;
+Thema 5, taak 3;verlegen;;;
+Thema 5, taak 3;verstaan;;;
+Thema 5, taak 3;vloeiend;;;
+Thema 5, taak 3;volgorde;de;;
+Thema 5, taak 3;voordoen;;;
+Thema 5, taak 3;woordenschat;de;;
+Thema 5, taak 4;afmaken;;;
+Thema 5, taak 4;beveiliger;de;;
+Thema 5, taak 4;diploma;het;;
+Thema 5, taak 4;doorstromen;;;
+Thema 5, taak 4;elektricien;de;;
+Thema 5, taak 4;geldig;;;
+Thema 5, taak 4;horeca;de;;
+Thema 5, taak 4;luchthaven;de;;
+Thema 5, taak 4;niveau;het;;
+Thema 5, taak 4;portier;de;;
+Thema 5, taak 4;schoonheidsspecialiste;de;;
+Thema 5, taak 4;sector;de;;
+Thema 5, taak 4;serveerster;de;;
+Thema 5, taak 4;techniek;de;;
+Thema 5, taak 4;technisch;;;
+Thema 5, taak 4;tegenkomen;;;
+Thema 5, taak 4;toelaten;;;
+Thema 5, taak 4;toelatingseis;de;;
+Thema 5, taak 4;uiterlijk;;;
+Thema 5, taak 4;vmbo;het;;
+Thema 5, taak 4;voorbereidend;;;
+Thema 5, taak 4;vooropleiding;de;;
+Thema 5, taak 4;werkgelegenheid;de;;
+Thema 5, taak 4;wiskunde;de;;
