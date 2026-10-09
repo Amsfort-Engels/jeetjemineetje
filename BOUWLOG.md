@@ -213,3 +213,19 @@ Verder:
 - Service worker naar `v4`, omdat `app.js` is gewijzigd. **Bij elke wijziging aan app-bestanden de versie ophogen**,
   anders houden telefoons de oude code.
 - Marieke vindt de proefzinnen goed.
+
+## 2026-10-09 (avond) — Ontwerp Wedstrijd
+
+Op verzoek van Marieke ("maak het grappig als het kan"): [ONTWERP-WEDSTRIJD.md](ONTWERP-WEDSTRIJD.md).
+Nog geen code. Eerst review door fabel (toon, namen, grappen) en Astra (relay, reconnect).
+
+Belangrijkste keuzes:
+- **Geluid via het digibord**, niet via de telefoons. Dat lost het stemprobleem in de klas op.
+- **Roomcode is een Nederlands woord** (`KAAS`, `TULP`). Namen zijn **bijvoeglijk naamwoord + iets lekkers**,
+  goed verbogen (Koele Kroket, Prachtig Poffertje). Geen vrije tekst, nergens.
+- **Punten:** goed 100, snelheid max. 50, reeks +25, nooit minpunten.
+- **Niemand goed → het spel pauzeert voor uitleg van Els.** Het sarmoment is voor de groep, nooit voor één naam.
+  Namen verschijnen alleen op het bord als het goed gaat.
+- **Iedereen buiten de top 3 krijgt een titel**, geen plaats onderaan.
+- Relay: Durable Object, alleen in het geheugen, room weg na sluiten of 2 uur stilte.
+  Deployen vraagt Node (of uitzoeken of het via het Cloudflare-dashboard kan).
