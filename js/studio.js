@@ -129,7 +129,7 @@ function bewaar() {
   if (!room || !game) return;
   const plan = game.plan.map(v => ({
     id: v.word.id, vorm: v.vorm, opties: v.opties, herkansing: v.herkansing,
-    eerder: v.eerder, qid: v.qid, pct: v.pct, dubbel: v.dubbel,
+    eerder: v.eerder, qid: v.qid, pct: v.pct, dubbel: v.dubbel, verwerkt: v.verwerkt,
   }));
   const pending = game.pending ? { qid: game.pending.qid, index: game.pending.index, msg: game.pending.msg } : null;
   try { sessionStorage.setItem(KEY, JSON.stringify({ room, plan, i: game.i, laatste: game.laatste, pending })); } catch {}
@@ -468,8 +468,12 @@ function uitslag(m) {
   // Second try: under half the class right -> back 3 or 4 questions later, once.
   // Always before the Gouden Klomp, and only if there's room for at least one
   // other question in between; otherwise no second try.
+  // Showing a result again (after a reload or reconnect) must not change the
+  // plan again: the result of each question is processed once (review Astra).
   const laatsteIndex = game.plan.length - 1;
-  if (!v.herkansing && !v.dubbel && pct < 0.5 && game.plan.length < MAX_VRAGEN) {
+  const eersteKeer = !v.verwerkt;
+  v.verwerkt = true;
+  if (eersteKeer && !v.herkansing && !v.dubbel && pct < 0.5 && game.plan.length < MAX_VRAGEN) {
     const pos = Math.min(game.i + 3 + Math.round(Math.random()), laatsteIndex);
     if (pos >= game.i + 2) {
       const retry = maakVraag(v.word, themes.get(v.word.thema), v.vorm, true);

@@ -473,3 +473,24 @@ onbedoeld getest, en het werkte.
 
 **Tests:** 28 relaytests lokaal groen (6 nieuw). De 7 nieuwste ook live groen. Studioscenario's in de
 browser met een tijdelijke testpagina (verwijderd). Service worker naar `v13`.
+
+## 2026-10-10 — Derde controle Astra (`fadcf8e`)
+
+Astra bevestigt: alle vier studiofouten van de vorige ronde zijn opgelost (identiek opnieuw sturen, late en
+dubbele bevestigingen gaan maar één keer vooruit, lopende vraag hervat met de resterende tijd, verloren Start
+en verloren afronden herstelbaar). 28 relaytests groen.
+
+**Nieuw gevonden (P2):** een uitslag opnieuw tonen (na herstel) voegde zijn herkansing opnieuw toe. Een plan
+van 6 vragen werd 7, 8, 9. Herladen op het uitslagscherm kon hetzelfde woord dus meerdere keren laten
+terugkomen.
+**Opgelost:** elke vraag krijgt `verwerkt` zodra zijn uitslag verwerkt is, en dat wordt bewaard. Opnieuw
+tonen verandert het plan niet meer.
+**Getest:** dezelfde uitslag drie keer getoond → plan 10 → 11 → 11 → 11. Twee keer herladen → blijft 11.
+
+**Twee preciseringen van Astra, overgenomen:**
+- Het budget per IP *verkleint* het gedeelde-quotumprobleem maar *lost het niet op*. Restrisico, ook:
+  meerdere docenten achter één school-IP delen samen 8 rooms per uur. Voor één klas ruim genoeg.
+- "Expliciete weigering" betekent een protocolbericht aan de studio, niet logging. Er is geen
+  applicatielogging bijgekomen.
+
+Service worker naar `v14`.
