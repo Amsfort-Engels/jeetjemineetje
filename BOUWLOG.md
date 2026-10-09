@@ -202,3 +202,14 @@ Verder:
   antwoord, focus goed na elke vraag. Op de Mac zijn Ellen en Xander `localService=true`.
 - **Niet getest:** het 503-scenario uit bevinding 2 (lokaal registreert de service worker niet in de
   preview-browser van de bouwer). Astra, als je dit opnieuw wilt draaien: graag.
+
+### Hercontrole Astra (commit `39b0e25`)
+
+- Alle vijf de oplossingen bevestigd, ook het 503-scenario: oude cache bewaard, offline alle vijf thema's speelbaar.
+- **Nieuw, klein:** als in een thema geen enkel woord speelbaar is (bv. alleen *vmbo*, zonder stem), crashte
+  `startRound`. Nu volgt een melding ("Dit thema werkt nog niet op deze telefoon") met de stem-tip, en een
+  knop terug. Getest met een tijdelijke testpagina: thema met alleen een onspeelbaar woord, zonder stem,
+  geen fouten in de console.
+- Service worker naar `v4`, omdat `app.js` is gewijzigd. **Bij elke wijziging aan app-bestanden de versie ophogen**,
+  anders houden telefoons de oude code.
+- Marieke vindt de proefzinnen goed.

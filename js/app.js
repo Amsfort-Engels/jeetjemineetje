@@ -125,6 +125,15 @@ function otherWords(word, pool, n = 3) {
 
 function startRound(naam) {
   const words = themes.get(naam).filter(w => questionType(w) !== null);
+  if (!words.length) {
+    return show(h('main', { class: 'scherm einde' },
+      h('p', { class: 'uitroep groot' }, 'Oei!'),
+      h('p', {}, 'Dit thema werkt nog niet op deze telefoon.'),
+      hasDutchVoice() ? null : h('p', { class: 'melding' },
+        '🔇 Je telefoon heeft geen Nederlandse stem. Zet "Nederlands" aan bij tekst-naar-spraak.'),
+      h('div', { class: 'knoppen' },
+        h('button', { class: 'knop', type: 'button', onclick: home }, 'Thema\'s'))));
+  }
   const round = leitner.startRound(naam);
   const state = {
     naam, words, round,
