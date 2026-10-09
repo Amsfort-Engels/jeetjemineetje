@@ -33,12 +33,13 @@ export function hasDutchVoice() {
   return voice !== null;
 }
 
-export function speak(text, { rate = 0.85 } = {}) {
-  if (!voice) return;
+export function speak(text, { rate = 0.85, onEnd } = {}) {
+  if (!voice) { onEnd?.(); return; }
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.voice = voice;
   u.lang = voice.lang;
   u.rate = rate;
+  if (onEnd) { u.onend = onEnd; u.onerror = onEnd; }
   speechSynthesis.speak(u);
 }

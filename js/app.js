@@ -1,6 +1,7 @@
 import { loadWords, groupByTheme, isImageFile, splitZin, plainZin } from './data.js';
 import * as leitner from './leitner.js';
 import { isCorrect, isAlmost } from './answer.js';
+import { otherWords } from './vragen.js';
 import { uitroep } from './uitroepen.js';
 import { initSpeech, hasDutchVoice, speak } from './speech.js';
 
@@ -77,8 +78,10 @@ function home() {
       '🔇 Deze telefoon heeft geen Nederlandse stem. Je kunt oefenen, maar zonder geluid. ',
       h('small', {}, 'Tip: zet in je instellingen "Nederlands" aan bij tekst-naar-spraak.')),
     h('div', { class: 'themas' }, cards),
+    h('a', { class: 'knop meedoen-knop', href: 'meedoen.html' }, '🎮 Wedstrijd in de klas: meedoen'),
     h('footer', { class: 'voet' },
-      h('p', {}, 'Geen account. Je punten staan alleen op deze telefoon.')),
+      h('p', {}, 'Geen account. Je punten staan alleen op deze telefoon.'),
+      h('p', {}, h('a', { href: 'studio.html' }, 'Voor de docent: de studio'))),
   );
 }
 
@@ -112,15 +115,6 @@ function questionType(word) {
   const types = tiers.filter(t => can[t]);
   if (!types.length) types.push(...Object.keys(can).filter(t => can[t]));
   return types.length ? types[Math.floor(Math.random() * types.length)] : null;
-}
-
-// Three other words from the theme, preferring the same kind (noun or not).
-function otherWords(word, pool, n = 3) {
-  const isNoun = w => !!w.lidwoord;
-  const others = leitner.shuffle(pool.filter(w => w.woord !== word.woord && !word.nietAfleider.includes(w.woord)));
-  const same = others.filter(w => isNoun(w) === isNoun(word));
-  const picked = [...same, ...others.filter(w => !same.includes(w))].slice(0, n);
-  return leitner.shuffle([word, ...picked]);
 }
 
 function startRound(naam) {

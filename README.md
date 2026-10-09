@@ -11,7 +11,9 @@ Keuzes en afwijkingen staan in [BOUWLOG.md](BOUWLOG.md).
 
 - **Oefenen** (solo, offline): werkt, met de vijf woordenlijsten van Els.
   Alle 123 woorden hebben een voorbeeldzin.
-- **Wedstrijd** (live in de klas): nog niet gebouwd.
+- **Wedstrijd** (live in de klas): gebouwd en lokaal getest, nog niet online.
+  Bord: `studio.html`. Telefoons: `meedoen.html` (ook via de knop op het beginscherm).
+  Server: `relay/` (Cloudflare Worker + Durable Object).
 
 ## Lokaal draaien
 
@@ -22,6 +24,23 @@ python3 -m http.server 8765
 ```
 
 Open dan http://localhost:8765.
+
+## Wedstrijd lokaal draaien
+
+Node.js nodig. In `relay/`:
+
+```bash
+npm install
+npm run dev
+```
+
+Dan `http://localhost:8765/studio.html` (met de statische server hierboven). Tests, terwijl `npm run dev` draait:
+
+```bash
+npm test
+```
+
+`relay/.dev.vars` zet de limieten uit voor lokale tests. Wrangler leest dat bestand nooit bij een deploy.
 
 ## Woorden
 

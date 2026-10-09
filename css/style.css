@@ -129,6 +129,8 @@ button:disabled { cursor: default; }
   transition: width 0.3s;
 }
 
+.meedoen-knop { display: block; text-align: center; text-decoration: none; margin-top: 16px; }
+.voet a { color: var(--inkt-zacht); }
 .voet { margin-top: auto; padding-top: 32px; font-size: 0.85rem; color: var(--inkt-zacht); text-align: center; }
 
 /* ---------- images ---------- */

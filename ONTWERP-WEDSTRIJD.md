@@ -136,10 +136,14 @@ De laatste vraag telt **dubbel**. Het bord kondigt het aan met tromgeroffel:
 - **Eerst de klassenscore** (suggestie fabel): *"Samen: 127 goede antwoorden! Wat een klas, jeetje mineetje!"*
   Iedereen, ook wie onderaan staat, is mede-eigenaar van een getal dat omhoog ging.
 - **Daarna het podium:** top 3, met confetti en een uitroep per plek.
-- **Iedereen anders krijgt een titel**, nooit een plaats onderaan. De app kiest titels die bij de data passen:
+- **Iedereen anders krijgt een titel**, nooit een plaats onderaan. De app kiest titels die bij de data passen.
+  De meeste titels gaan naar hooguit één persoon (zie BOUWLOG, simulatie met 15 telefoons):
   - **Snelste vinger**: snelste goede antwoord, gemeten door de relay. Alleen een titel, geen punten.
-  - **Comeback-koning(in)**: grootste stijging in de tweede helft
+  - **Comeback-kanjer**: de meeste goed in de tweede helft (genderneutraal)
   - **Taalkanon**: langste reeks
+  - **Luisterkampioen**, **Zinnenkanjer**, **Spellingster**: de meeste luister-, zin- of spellingvragen goed
+  - **Herkansingsheld**: de meeste herkansingen goed
+  - **Sterke start**: de meeste goed in de eerste helft
   - **IJzeren zenuwen**: goed bij de Gouden Klomp
   - **Doorzetter**: alle vragen beantwoord
   - **Mysterieuze kandidaat**: niets bijzonders gemeten, dus dat is ook een titel

@@ -3,10 +3,10 @@
 // Everything else: cache first. Bump VERSION on every release.
 
 const PREFIX = 'jeetjemineetje-';
-const VERSION = `${PREFIX}v5`;
+const VERSION = `${PREFIX}v7`;
 const SHELL = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest', 'icon.svg',
-  'js/app.js', 'js/data.js', 'js/leitner.js', 'js/answer.js', 'js/uitroepen.js', 'js/speech.js',
+  'js/app.js', 'js/data.js', 'js/leitner.js', 'js/answer.js', 'js/vragen.js', 'js/uitroepen.js', 'js/speech.js',
   'data/woorden.csv',
 ];
 

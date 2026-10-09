@@ -25,13 +25,17 @@ function inflect([deForm, hetForm], article) {
   return article === 'het' ? hetForm : deForm;
 }
 
-// Prefer alliteration (Felle Frikandel), fall back to any unused combination.
+// Prefer alliteration (Felle Frikandel), and avoid two "Brave …" or two
+// "… Kroket" in one class: unique adjective and food while that's possible.
 export function drawName(used, rng = Math.random) {
+  const usedWords = new Set([...used].flatMap(n => n.split(' ')));
   const all = [];
   for (const food of FOODS) {
     for (const adj of ADJECTIVES) {
       const name = `${inflect(adj, food[1])} ${food[0]}`;
       if (used.has(name)) continue;
+      const fresh = !usedWords.has(adj[0]) && !usedWords.has(adj[1]) && !usedWords.has(food[0]);
+      if (!fresh && used.size < Math.min(ADJECTIVES.length, FOODS.length)) continue;
       const alliterates = adj[0][0] === food[0][0];
       all.push({ name, emoji: food[2], weight: alliterates ? 12 : 1 });
     }

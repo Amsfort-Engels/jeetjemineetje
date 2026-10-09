@@ -216,7 +216,8 @@ export class Room extends DurableObject {
     if (!g || conn.gameId !== g.id) { send(conn.ws, { t: 'einde', reden: 'weg' }); conn.ws.close(1000, 'einde'); return; }
     if (conn.role === 'teacher') {
       if (g.teacherWs !== conn.ws) return;
-      g.teacherActiveAt = Date.now();
+      // A heartbeat is not activity: a forgotten board must not keep a room alive.
+      if (msg.t !== 'ping') g.teacherActiveAt = Date.now();
       return this.teacherMessage(msg);
     }
     const p = g.players.get(conn.playerId);
@@ -442,6 +443,9 @@ export class Room extends DurableObject {
     if (g.history.some(h => h.qid === msg.qid)) return;
     g.question = {
       qid: msg.qid, labels: msg.knoppen, correct: msg.goed, double: msg.dubbel === true,
+      // Only used for titles at the end; unknown values are ignored.
+      kind: ['luister', 'zin', 'spelling'].includes(msg.vorm) ? msg.vorm : null,
+      retry: msg.herkansing === true,
       openedAt: null, deadline: null, timer: null, void: false,
     };
     g.phase = 'locked';
@@ -531,7 +535,7 @@ export class Room extends DurableObject {
         p.streak = 0;
       }
     }
-    g.history.push({ qid: q.qid, double: q.double, results });
+    g.history.push({ qid: q.qid, double: q.double, kind: q.kind, retry: q.retry, results });
 
     const ranked = this.ranking();
     const leader = ranked[0];
@@ -596,26 +600,39 @@ export class Room extends DurableObject {
     const half = Math.floor(played.length / 2);
     const secondHalf = new Set(played.slice(half).map(h => h.qid));
     const last = played[played.length - 1];
+    const firstHalf = new Set(played.slice(0, half).map(h => h.qid));
+    const countWhere = (p, pred) => {
+      let n = 0;
+      for (const h of played) if (pred(h) && h.results.get(p.id)) n++;
+      return n > 0 ? n : null;
+    };
+    // Each of these goes to at most one person, so the class doesn't learn
+    // to read one fixed consolation title as "you lost" (review fabel).
+    // 'beste': the best at it. 'spreiden': earned (at least half of the best
+    // score) but given to the lowest-ranked person who earned it, so the
+    // left-over titles don't all end up at the bottom of the ranking.
     const unique = [
-      ['Snelste vinger', p => {
+      ['Snelste vinger', 'beste', p => {
         const times = [...p.answers.values()].filter(a => a.correct).map(a => a.ms);
         return times.length ? -Math.min(...times) : null;
       }],
-      ['Comeback-kanjer', p => {
-        let pts = 0;
-        for (const h of played) if (secondHalf.has(h.qid) && h.results.get(p.id)) pts++;
-        return pts > 0 ? pts : null;
-      }],
-      ['Taalkanon', p => (p.bestStreak >= 2 ? p.bestStreak : null)],
+      ['Taalkanon', 'beste', p => (p.bestStreak >= 2 ? p.bestStreak : null)],
+      ['Comeback-kanjer', 'beste', p => countWhere(p, h => secondHalf.has(h.qid))],
+      ['Luisterkampioen', 'spreiden', p => countWhere(p, h => h.kind === 'luister')],
+      ['Zinnenkanjer', 'spreiden', p => countWhere(p, h => h.kind === 'zin')],
+      ['Spellingster', 'spreiden', p => countWhere(p, h => h.kind === 'spelling')],
+      ['Herkansingsheld', 'spreiden', p => countWhere(p, h => h.retry)],
+      ['Sterke start', 'spreiden', p => countWhere(p, h => firstHalf.has(h.qid))],
     ];
-    for (const [title, score] of unique) {
-      let best = null, bestVal = null;
-      for (const p of rest) {
-        if (out.has(p.id)) continue;
-        const v = score(p);
-        if (v !== null && (bestVal === null || v > bestVal)) { best = p; bestVal = v; }
-      }
-      if (best) out.set(best.id, title);
+    for (const [title, mode, score] of unique) {
+      const scored = rest.filter(p => !out.has(p.id)).map(p => [p, score(p)]).filter(([, v]) => v !== null);
+      if (!scored.length) continue;
+      const max = Math.max(...scored.map(([, v]) => v));
+      // rest is in ranking order, so the last eligible one is the lowest-ranked.
+      const pick = mode === 'beste'
+        ? scored.find(([, v]) => v === max)
+        : scored.filter(([, v]) => v >= max / 2).at(-1);
+      out.set(pick[0].id, title);
     }
     for (const p of rest) {
       if (out.has(p.id)) continue;

@@ -291,3 +291,62 @@ inmiddels niet meer in de spelfouten, en *slagen/zakken* is een mooier verwarbaa
 
 Digibord speelt geluid af: **ja**. School-wifi: **ja** (WebSockets nog testen in het lokaal, staat op het
 testplan). Scorebord: **top 5**. Over de uitroepen: "Hahahaha zó grappig."
+
+## 2026-10-09 (nacht) — De Wedstrijd gebouwd
+
+Volgens ONTWERP-WEDSTRIJD.md v2. **Lokaal gebouwd en getest, nog niet online**: daarvoor moet
+Marieke eenmalig inloggen bij Cloudflare (zie onder).
+
+### Gebouwd
+
+- **`relay/`**: Cloudflare Worker + Durable Object, de scheidsrechter. Docenttoken, spelerstokens (alleen als
+  hash bewaard), rolcontrole en validatie bij elk bericht, toelating door de docent, één antwoord per vraag,
+  reconnect met momentopname, pauze en vervallen vraag als de studio wegvalt, verlooptijden (3 min /
+  30 min / 3 uur; de hartslag van het bord telt níet als activiteit), limieten (rooms per IP, meedoen per
+  room, berichten per verbinding), **logging en tracing uit** in `wrangler.jsonc`, geen `console.*`.
+  Wrangler-telemetrie op deze Mac ook uit.
+- **`studio.html`** (bord): thema's kiezen, roomcode + QR, tribune met toelaten, vragen (luister, zin,
+  spelling), geluid via het bord vóórdat het antwoordvenster opent, showmomenten, herkansing, Gouden Klomp,
+  klassenscore, podium, titels. Lade voor toelating, verwijderen en **koppelen** (telefoon kwijt → nieuwe
+  telefoon aan de oude naam). Herladen tijdens een spel: de studio logt weer in en gaat verder.
+- **`meedoen.html`** (telefoon): code invoeren of QR, naamtrekking met één keer "Nee! Andere naam!",
+  vier kleurknoppen met vorm (● ▲ ■ ◆), "Je antwoord is binnen ✓", eigen score en plek, finale met titel.
+- **`js/verbinding.js`**: gedeelde WebSocket met hartslag, oplopende wachttijd + willekeur, en direct opnieuw
+  proberen als het scherm weer aangaat of het netwerk terugkomt.
+- **`js/vragen.js`**: afleiders kiezen, nu gedeeld door Oefenen en de studio.
+- QR-codes via `qrcode-generator` 2.0.4 (MIT), in de repo gezet (`js/vendor/`), geen netwerk- of eval-aanroepen.
+- Node.js v24.21.0 geïnstalleerd in `~/.local/node` (checksum gecontroleerd), wrangler 4.139.0 vastgepind.
+
+### Getest
+
+- **17 relay-tests** tegen `wrangler dev` (`npm test` in `relay/`): namen, docentrechten, auth-timeout,
+  toelating, scoring en sleutel pas na sluiten, één antwoord per vraag, reconnect + vervangen verbinding,
+  late antwoorden, deadline, studio valt weg, stoppen, laatkomers, koppelen, reeks/dubbel/klassenscore/titels,
+  kapotte berichten, overspoelen, verdwenen spel. **Alle 17 groen.**
+- **Drie volledige spellen** in de browser: echte studio, 15 gesimuleerde telefoons die gokken.
+  Gevonden en opgelost:
+  - Dubbele bijvoeglijke naamwoorden ("Brave Baklava" én "Brave Tompoes"): bijvoeglijk naamwoord en
+    snack zijn nu uniek zolang dat kan.
+  - Spraak die nooit "klaar" meldt hield het antwoordvenster tot 12 seconden dicht. Nu een vangnet
+    naar woordlengte (±2 seconden voor een kort woord).
+  - **8 van de 12 titels waren "Doorzetter"**, precies wat fabel voorspelde. Nu 8 unieke titels
+    (Snelste vinger, Taalkanon, Comeback-kanjer, Luisterkampioen, Zinnenkanjer, Spellingster,
+    Herkansingsheld, Sterke start). De vaardigheidstitels gaan naar wie ze verdiende (minstens de helft
+    van de beste score) én het laagst in de ranglijst staat. In het laatste testspel: plek 15 werd
+    Zinnenkanjer, plek 13 Spellingster, en "Doorzetter" kwam één keer voor.
+  - Na het podium zou "Studio sluiten" op de telefoons "Oei! De juf heeft gestopt" tonen, over de eigen
+    uitslag heen. Nu blijft de uitslag staan.
+  - Een herkansing kon ná de Gouden Klomp vallen. Nu altijd ervóór, en alleen met minstens één vraag ertussen.
+
+### Nog te doen vóór de klas
+
+1. **Online zetten.** Marieke logt eenmalig in: `cd relay && npx wrangler login` (opent de browser,
+   Cloudflare vraagt toestemming). Daarna `npm run deploy`, en het adres komt in `js/config.js`.
+2. **Logging controleren in het Cloudflare-dashboard** (testplan Astra).
+3. **Testplan Astra** op echte telefoons: slot, wifi → 4G, school-wifi, geforceerde herstart.
+4. Review door fabel (toon op het bord, titels) en Astra (de code van relay, studio en meedoen).
+
+### Niet getest
+
+- Echt geluid uit een digibord (de testbrowser speelt geen spraak af).
+- Echte telefoons, schermlezers, en de relay op Cloudflare zelf (alleen lokaal in `wrangler dev`).
