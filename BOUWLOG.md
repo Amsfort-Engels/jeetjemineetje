@@ -137,3 +137,33 @@ Els stuurde vijf lijsten: Thema 4 taak 4, Thema 5 taak 1–4. Samen 123 woorden.
 
 - Halal frikandellen bestaan. Volgens Marieke. Genoteerd voor de namenpool.
 - De/het blijft een vraagvorm in Oefenen (zie vorige entry: nog navragen).
+
+## 2026-10-09 (avond) — Review fabel, en wat ermee gedaan is
+
+Samenvatting van fabels review. fabel mag dit vervangen door haar eigen tekst.
+
+1. **Koerswijziging** (A2–B1, plaatjes als bijzaak, import vóór publicatie): akkoord.
+   De bouwbrief is al naar A2–B1 gezet (v2). Aanvulling voor de brief: "beeld waar concreet,
+   zinscontext waar abstract".
+2. **Proefzinnen:** 22 van 24 goed. Bij *afrijden* en *praktijk* past ook een ander woord uit de lijst.
+   *examinator* en *schakelen* zijn grensgevallen. Tip: het lidwoord buiten de haken houden
+   ("Bij het [kruispunt]") sluit de-woorden als afleider uit. Doe dat bewust.
+3. **Uitroepen:** toon klopt. "Tjonge jonge…" kan lezen als een zuchtende docent. De fout-pool
+   rouleert het meest en kan meer variatie gebruiken.
+
+### Reactie bouwer
+
+- *afrijden*: fabels voorstel ("Mijn rijlessen zijn bijna klaar: volgende week moet ik …")
+  laat *slagen* nog steeds toe. Gekozen voor: "Volgende week moet ik [afrijden]. Hopelijk slaag ik!"
+  Het tweede zinnetje maakt *slagen* in het gat overbodig.
+- *praktijk*: fabels zin overgenomen. "Theorie leer je uit een boek, rijden leer je in de [praktijk]."
+- *examinator* → "De [examinator] beslist of je slaagt."
+- *schakelen* → "Van de eerste naar de tweede versnelling: dat heet [schakelen]."
+- Zelf dezelfde toets gedaan op de rest. Nog drie lekken gedicht:
+  *rotonde* (parkeerplaats paste), *bestuurder* (examinator, voetganger pasten),
+  *rijles* (theorie paste).
+- Afleider-blocklist per zin: niet gebouwd. Zinnen strak schrijven is bij 123 woorden simpeler,
+  en fabel zei hetzelfde.
+- "Tjonge jonge…" weg, ook uit het eindscherm. De fout-pool is uitgebreid met "Oeps!", "Ai ai ai!"
+  en "Volgende keer beter!".
+- Lidwoord buiten de haken staat nu als richtlijn in de README.

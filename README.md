@@ -37,7 +37,8 @@ Voorbeeldzinnen en plaatjes staan niet in Els' bestanden maar in `data/aanvullin
 woord staat in de zin tussen [haken]: `Neem op de rotonde de tweede [afslag].`
 
 **Richtlijn voor zinnen:** precies één woord uit de lijst moet passen. "Je mag hier niet [parkeren]"
-werkt, omdat "hier" de andere werkwoorden uitsluit. Geen geweld, dood of familie.
+werkt, omdat "hier" de andere werkwoorden uitsluit. Zet het lidwoord bewust *buiten* de haken
+("Bij het [kruispunt]"): dat sluit de-woorden als afleider al uit. Geen geweld, dood of familie.
 
 ## Bestanden
 
