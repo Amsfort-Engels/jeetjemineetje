@@ -350,3 +350,19 @@ Marieke eenmalig inloggen bij Cloudflare (zie onder).
 
 - Echt geluid uit een digibord (de testbrowser speelt geen spraak af).
 - Echte telefoons, schermlezers, en de relay op Cloudflare zelf (alleen lokaal in `wrangler dev`).
+
+### Online (2026-10-09, nacht)
+
+- Relay staat op **https://jeetjemineetje-relay.jeetjemineetje-relay.workers.dev**, op het
+  Cloudflare-account van m.verwoerd@amsfort.nl (school). De dubbele naam koos Cloudflare zelf bij het
+  aanmaken van het workers.dev-subdomein.
+- `js/config.js` wijst ernaar. De Meedoen-knop en de studio-link verschijnen daarmee in de app.
+- **8 kerntests groen tegen de echte relay** (docentrechten, scoring, één antwoord, reconnect, late
+  antwoorden, studio weg, koppelen, reeks/dubbel/titels).
+- CORS: alleen `https://amsfort-engels.github.io` krijgt toegang (en localhost voor ontwikkeling).
+- **Bevinding: de limiet op het aanmaken van rooms werkt niet op Cloudflare.** 44 rooms snel achter elkaar
+  werden allemaal aangemaakt. De rate-limit-binding van Cloudflare telt "eventually consistent", of werkt
+  niet op dit plan. De limieten *binnen* een room (30 kandidaten, 40 wachtende verbindingen, berichten
+  per seconde) zitten in de relay zelf en werken wel. Gevolg: iemand zou veel lege rooms kunnen aanmaken.
+  Geen privacyrisico en geen kosten op het gratis plan, maar wel een gat. **Astra: graag meedenken.**
+- **Nog doen:** logging-instellingen controleren in het Cloudflare-dashboard (testplan Astra).
