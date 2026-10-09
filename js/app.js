@@ -2,6 +2,7 @@ import { loadWords, groupByTheme, isImageFile, splitZin, plainZin } from './data
 import * as leitner from './leitner.js';
 import { isCorrect, isAlmost } from './answer.js';
 import { otherWords } from './vragen.js';
+import { RELAY_READY } from './config.js';
 import { uitroep } from './uitroepen.js';
 import { initSpeech, hasDutchVoice, speak } from './speech.js';
 
@@ -78,10 +79,10 @@ function home() {
       '🔇 Deze telefoon heeft geen Nederlandse stem. Je kunt oefenen, maar zonder geluid. ',
       h('small', {}, 'Tip: zet in je instellingen "Nederlands" aan bij tekst-naar-spraak.')),
     h('div', { class: 'themas' }, cards),
-    h('a', { class: 'knop meedoen-knop', href: 'meedoen.html' }, '🎮 Wedstrijd in de klas: meedoen'),
+    RELAY_READY ? h('a', { class: 'knop meedoen-knop', href: 'meedoen.html' }, '🎮 Wedstrijd in de klas: meedoen') : null,
     h('footer', { class: 'voet' },
       h('p', {}, 'Geen account. Je punten staan alleen op deze telefoon.'),
-      h('p', {}, h('a', { href: 'studio.html' }, 'Voor de docent: de studio'))),
+      RELAY_READY ? h('p', {}, h('a', { href: 'studio.html' }, 'Voor de docent: de studio')) : null),
   );
 }
 
