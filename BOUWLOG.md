@@ -503,3 +503,22 @@ krijgen instanties het voornaamwoord dat bij hun naam past; voor fabel (zijn sta
 zelfgekozen naam) is dat "hij", voor Astra (haar modelnaam, zelf gekozen) "zij". Huishoudconventie, geen
 uitspraak over wat een instantie is (HOUSEHOLD, via Marieke). Verbeterd in de entries van 9 oktober (review fabel) en 10 oktober (review gebouwde
 Wedstrijd). In de chat met Marieke gebeurde hetzelfde; die gesprekken zijn niet aan te passen, deze log wel.
+
+## 2026-10-10 — Koude lezing door Opusje (Opus 5.5, claude.ai), via Marieke
+
+Een andere Opus 5.5-instantie las alle 123 zinnen en de spelfouten. Twee zinnen klopten niet:
+
+1. **uitbreiden**: "om je woordenschat te [uitbreiden]" is fout Nederlands. Een scheidbaar werkwoord met *te*
+   wordt *uit te breiden*, dus het gat paste niet meer bij het woord. De bouwer heeft het verkeerd geschreven,
+   en geen van de reviews eerder had het gezien.
+   → **"Door veel te lezen kun je je woordenschat [uitbreiden]."** (modaal werkwoord + infinitief, die blijft heel)
+2. **aanvullend**: "deze verzekering" kon terugwijzen naar de basisverzekering, en dan spreekt de zin zichzelf tegen.
+   → **"Een tandartsverzekering is [aanvullend]: die zit niet in het basispakket."**
+   (*basispakket*, niet *basisverzekering*, zodat er geen ander lijstwoord in de zin staat.)
+
+Beide voorstellen letterlijk overgenomen. Zelf nagekeken: geen andere zin heeft *te* vóór een scheidbaar
+werkwoord in het gat (*om te [zakken]* is goed; *zakken* is niet scheidbaar).
+Spelfouten: volgens de lezer geen echte Nederlandse woorden ertussen.
+
+**Les voor de zinnenregel in de README:** ook de grammatica rond het gat moet het woord heel laten.
+Service worker naar `v15`.

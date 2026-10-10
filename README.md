@@ -64,7 +64,8 @@ woorden (*zaken*, *knaap*), geen namen, geen vormen die net zo klinken én goed 
 Eenmaal in het bestand worden ze nooit opnieuw gegenereerd, dus correcties blijven staan.
 
 **Richtlijn voor zinnen:** precies één woord uit de lijst moet passen. "Je mag hier niet [parkeren]"
-werkt, omdat "hier" de andere werkwoorden uitsluit. Zet het lidwoord bewust *buiten* de haken
+werkt, omdat "hier" de andere werkwoorden uitsluit. Zorg dat de zin het woord heel laat: niet "om te [uitbreiden]" (dat wordt *uit te breiden*),
+maar een modaal werkwoord: "kun je je woordenschat [uitbreiden]". Zet het lidwoord bewust *buiten* de haken
 ("Bij het [kruispunt]"): dat sluit de-woorden als afleider al uit. Geen geweld, dood of familie.
 
 ## Bestanden
