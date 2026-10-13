@@ -522,3 +522,25 @@ Spelfouten: volgens de lezer geen echte Nederlandse woorden ertussen.
 
 **Les voor de zinnenregel in de README:** ook de grammatica rond het gat moet het woord heel laten.
 Service worker naar `v15`.
+
+## 2026-10-13 — Eerste les met de klas (feedback Els, via Marieke)
+
+> - leuk, die Hollandse namen (Stoere Stroopwafel, Deftige Kaasbaas…)
+> - Vragen met 'welk woord hoor je' is veel te makkelijk
+> - Spelelement mag hoger. Nu alleen MC-vragen en ranglijst. Kahoot-stijl. Als het kan, mag het wat spannender.
+> - Ze moesten lachen om alle tussenwerpsels ❤️
+
+**Exit-tickets:** Els kreeg ze niet werkend. Ze zitten ook niet in de app: in het ontwerp was gekozen voor
+papier of handopsteken. Uitleg aan Els loopt via Marieke.
+
+**Voorstellen aan Els** (wacht op haar keuze, maximaal twee à drie; elke wijziging gaat daarna weer langs
+fabel en Astra):
+1. *Luisteren te makkelijk:* (a) luisterzin: het bord leest de voorbeeldzin voor met een piep op het gat,
+   de klas kiest het woord dat past; (b) in Oefenen afleiders die op het woord lijken.
+2. *Spannender:* geluid en spanning op het bord (tikken, gong, tromgeroffel) · teams (Team Frikandel vs
+   Team Stroopwafel) met een racebalk · snelheidsbonus terug in grove banden, gemeten door de relay
+   (afweging: eerlijkheid voor trage lezers, Els beslist) · bliksemronde · joker "dubbele punten".
+3. *Exit-ticket in de app:* na de prijsuitreiking drie emoji-vragen op de telefoon, totalen direct op het
+   bord, niets bewaard.
+
+**Nog onbekend:** hoe de techniek het deed in de klas (geluid digibord, meedoen, verbindingen).
