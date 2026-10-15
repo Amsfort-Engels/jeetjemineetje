@@ -544,3 +544,26 @@ fabel en Astra):
    bord, niets bewaard.
 
 **Nog onbekend:** hoe de techniek het deed in de klas (geluid digibord, meedoen, verbindingen).
+
+## 2026-10-15 — Antwoorden Els, plan voor na de herfstvakantie (nog niets gebouwd)
+
+**Els (via Marieke, Signal):**
+1. Beide luistervoorstellen: **ja** (luisterzin met piep op het gat; afleiders die op het woord lijken).
+2. Muziekjes: **ja**. Verder: "lijkt behoorlijk op Kahoot, wat prima is, maar een heel ander concept zou
+   misschien leuker zijn, zoals Quizlet, Blooket of Gimkit. Het hoeft niet op Kahoot te lijken."
+3. Exit-ticket in de app: **ja**.
+
+**Techniek in de klas:** werkte voor wie in het spel zat, geluid prima. **Maar sommige leerlingen konden niet
+inloggen:** QR gescand, daarna bleef de telefoon hangen op wachten op verbinding.
+Vermoeden (niet bevestigd): het schoolnetwerk blokkeert WebSockets of `*.workers.dev`; wie op 4G zat, kwam erin.
+**Open vraag aan Els:** zaten de vastlopers op de school-wifi en de anderen op 4G?
+
+**Plan, in deze volgorde (Marieke: pas na haar terugkeer uit Duitsland):**
+1. Verbindingsprobleem: een verbindingstest-pagina (wat faalt precies: server onbereikbaar of alleen de live
+   verbinding), plus een melding op de telefoon na een paar mislukte pogingen ("probeer het met 4G").
+   Echte oplossing afhankelijk van de oorzaak: ander webadres of een terugval voor netwerken zonder WebSockets.
+2. Luisterfixes in Oefenen en de Wedstrijd.
+3. Nieuw spelconcept, eerst als ontwerp, langs fabel en Astra. Opties voorgelegd: Gimkit/Blooket-stijl (ieder in
+   eigen tempo, munten of snacks, teamrace op het bord, chaosmomenten), Quizlet Live-stijl (teams, ieder heeft een
+   deel van de antwoorden, samen praten), of een mix. Voorkeur bouwer: Gimkit-stijl met teams. **Keuze Els.**
+   Muziek en exit-ticket gaan mee in het nieuwe concept.
