@@ -608,3 +608,20 @@ ontwerp langs fabel en Astra.
 
 Relay opnieuw gedeployd (twee keer: tweede keer om het roombudget na de livetests te resetten).
 Service worker naar `v16`.
+
+### Review Astra op `b78a853`, dezelfde avond verwerkt
+
+Vijf bevindingen (alle P2), allemaal gereproduceerd door Astra, allemaal opgelost en getest:
+
+| # | Bevinding | Oplossing | Getest |
+|---|---|---|---|
+| 1 | Exit-ticket offline: mislukte verzending telde als klaar; "Dank je wel", verbinding dicht, gegevens gewist, antwoorden nooit aangekomen. | Een vraag is pas klaar na bevestiging van de relay. Onbevestigde keuzes wachten ("Versturen…"), worden elke 3 s en na opnieuw verbinden opnieuw gestuurd. | Browser: offline getikt → "Versturen…", sessie blijft → weer online → opnieuw gestuurd, bevestigd → volgende vragen → "Dank je wel" → pas dan gewist. |
+| 2 | Oude spraak liep door: de uitgestelde uitslagzin na "Volgende", en de luisterzin na een pauze. | Spraak-"generaties": doorgaan, pauzeren, stoppen of herhalen begint een nieuwe generatie; alles wat nog van de oude klaarstond, zwijgt. Herhaalknoppen pas als het antwoordvenster open is (anders zou herhalen de intro afbreken en ging de vraag nooit open). | Browser met spraaklogger: na "Volgende" binnen 900 ms alleen de nieuwe vraag gezegd; na pauze tijdens de intro niets meer. |
+| 3 | Stoppen liet tikken en muziek doorlopen. | Eén opruimroutine voor elke uitgang (stoppen, vervangen, fout, terug naar start, pauze); de tik-timer hangt niet meer aan het spelobject. | Browser: stoppen tijdens open venster → van 3 lopende timers naar 0. |
+| 4 | Na herladen bleef Web Audio uit, ook de piep. | Elke klik of toets op het bord ontgrendelt geluid én spraak (lege uitspraak, onhoorbaar). | Browser: na herladen niets gespeeld; eerste klik → ontgrendeld. |
+| 5 | Live totalen per antwoord maakten individuele antwoorden herleidbaar (zeker samen met de naam van wie daarna wegviel). | Tijdens het invullen ziet het bord alleen "x van y klaar". Totalen pas op "Toon resultaten", alleen met minstens 3 klaar; op dat moment sluit het exit-ticket, zodat latere antwoorden niets verraden. | Relaytest (geen totalen vóór vrijgeven, weigering bij < 3, dicht na vrijgeven) + browser. |
+
+**Belofte bijgesteld (Astra):** "anoniem" betekent nu: de app bewaart nergens wie wat koos, en het bord
+toont alleen totalen van minstens 3 leerlingen, één keer. Niet: onmogelijk te raden in elke denkbare situatie.
+
+30 relaytests lokaal groen, 4 ook live. Relay gedeployd (+ budget gereset). Service worker naar `v17`.

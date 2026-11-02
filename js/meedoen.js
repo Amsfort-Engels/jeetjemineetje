@@ -158,7 +158,9 @@ const TICKET = [
   { vraag: 'Wat vond je het leukst?', opties: ['🔊 luisteren', '✍️ spelling', '📝 zinnen'] },
 ];
 let finaleData = null;
-let ticketKlaar = new Set();
+let ticketKlaar = new Set();      // confirmed by the relay
+let ticketWacht = new Map();      // tapped, not yet confirmed: vraag -> keuze (review Astra #1)
+let ticketDicht = false;          // the teacher released the results; no more answers
 
 function finaleScherm(m) {
   finaleData = m;
@@ -170,15 +172,17 @@ function finaleScherm(m) {
         open.slice(0, 1).map(q => h('div', {},
           h('p', { class: 'ticket-vraag' }, q.vraag),
           h('div', { class: 'ticket-opties' }, q.opties.map((o, k) => h('button', {
-            class: 'ticket-knop', type: 'button',
-            onclick: e => {
-              for (const b of e.currentTarget.parentElement.querySelectorAll('button')) b.disabled = true;
-              if (!conn?.send({ t: 'ticket', vraag: q.i, keuze: k })) {
-                // Not connected: mark it done locally anyway, so nobody gets stuck.
-                ticketKlaar.add(q.i); finaleScherm(finaleData);
-              }
+            class: `ticket-knop${ticketWacht.get(q.i) === k ? ' gekozen' : ''}`, type: 'button',
+            disabled: ticketWacht.has(q.i),
+            onclick: () => {
+              // Only a confirmation from the relay completes a question. Until then
+              // the choice waits and is sent again after a reconnect.
+              ticketWacht.set(q.i, k);
+              stuurTicket();
+              finaleScherm(finaleData);
             },
-          }, o))))))
+          }, o))),
+          ticketWacht.has(q.i) ? h('p', { class: 'wstatus' }, 'Versturen…') : null)))
     : h('p', { class: 'ticket-dank' }, 'Dank je wel! 💚');
   show(naamkaart(), h('main', { class: 'scherm einde' },
     h('p', { class: 'uitroep groot' }, m.plaats === 1 ? 'Nou breekt mijn klomp!' : 'Sjonge jonge, goed gedaan!'),
@@ -188,7 +192,29 @@ function finaleScherm(m) {
     h('p', {}, `De hele klas samen: ${m.klassenscore} goede antwoorden!`),
     ticket,
   ));
-  if (!open.length) { stopConn(); clearSession(); }   // all done: nothing left to connect for
+  if (!open.length) { stopConn(); clearSession(); }   // all confirmed: nothing left to connect for
+}
+
+let ticketTimer = null;
+function stuurTicket() {
+  clearTimeout(ticketTimer);
+  if (ticketDicht) return;
+  for (const [vraag, keuze] of ticketWacht) conn?.send({ t: 'ticket', vraag, keuze });
+  if (ticketWacht.size) ticketTimer = setTimeout(stuurTicket, 3000);   // no confirmation yet: try again
+}
+
+// The teacher showed the results: the ticket is closed. Unconfirmed choices
+// are said honestly not to have arrived.
+function ticketGesloten() {
+  ticketDicht = true;
+  clearTimeout(ticketTimer);
+  const nietAangekomen = TICKET.some((_, i) => !ticketKlaar.has(i));
+  stopConn();
+  clearSession();
+  if (!finaleData) return;
+  finaleScherm(finaleData);
+  const sec = app.querySelector('.ticket');
+  if (sec && nietAangekomen) sec.replaceWith(h('p', { class: 'ticket-dank' }, 'Het exit-ticket is gesloten. Dank je wel! 💚'));
 }
 
 function eindScherm(tekst) {
@@ -217,6 +243,7 @@ function stopVraagTimers() {
   clearTimeout(resendTimer);
   clearInterval(barTimer);
 }
+
 
 function stopConn() {
   clearTimeout(resendTimer);
@@ -267,7 +294,7 @@ function verbindingsStatus(s) {
 function start(code) {
   stopConn();
   me = null; vraag = null; klaar = false; mislukt = 0;
-  finaleData = null; ticketKlaar = new Set();
+  finaleData = null; ticketKlaar = new Set(); ticketWacht = new Map(); ticketDicht = false; clearTimeout(ticketTimer);
   session = session?.code === code ? session : { code };
   wachtScherm();
   conn = new Verbinding({
@@ -296,7 +323,7 @@ function onMessage(m) {
       return wachtScherm();
     case 'stand': {
       me = { ...me, naam: m.naam, emoji: m.emoji, toegelaten: m.toegelaten };
-      if (m.finale) return toonFinale(m.finale, m.ticketKlaar || []);
+      if (m.finale) return toonFinale(m.finale, m.ticketKlaar || [], m.ticketOpen !== false);
       if (m.fase === 'paused') { stopVraagTimers(); return pauzeScherm(); }
       if (m.uitslag) { stopVraagTimers(); vraag = null; return uitslagScherm(m.uitslag); }
       if (m.vraag) {
@@ -360,8 +387,11 @@ function onMessage(m) {
       return show(h('main', { class: 'scherm einde' }, h('p', {}, 'Je speelt nu verder op een ander scherm.')));
     case 'ticket-ontvangen':
       ticketKlaar.add(m.vraag);
+      ticketWacht.delete(m.vraag);
       if (finaleData) finaleScherm(finaleData);
       return;
+    case 'ticket-dicht':
+      return ticketGesloten();
     case 'einde': {
       if (klaar) { stopConn(); clearSession(); return; }
       const teksten = {
@@ -382,10 +412,13 @@ function onMessage(m) {
 // the credentials (review Astra #6), then show the result.
 // The game is over. The connection stays open for the exit ticket; once that
 // is filled in (or the studio closes), connection and credentials go.
-function toonFinale(m, done = []) {
+function toonFinale(m, done = [], open = true) {
   klaar = true;
-  for (const i of done) ticketKlaar.add(i);
+  for (const i of done) { ticketKlaar.add(i); ticketWacht.delete(i); }
+  finaleData = m;
+  if (!open) return ticketGesloten();
   finaleScherm(m);
+  stuurTicket();   // after a reconnect: send the choices that weren't confirmed yet
 }
 
 // ---------- start ----------

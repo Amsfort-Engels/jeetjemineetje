@@ -47,9 +47,28 @@ function show(...nodes) {
 
 // Speak and resolve when done. Never trust 'end' alone: some browsers don't
 // fire it, and a failed utterance must not eat the students' answer time.
-function say(text, maxMs = 1500 + text.length * 90) {
+// Every spoken sequence belongs to a "generation". Moving on, pausing or
+// stopping starts a new one: anything still pending from the old one is
+// cancelled and stays silent (review Astra, 2 Nov).
+let spraakGen = 0;
+let uitslagSpraak = null;
+
+function stilte() {
+  spraakGen++;
+  clearTimeout(uitslagSpraak);
+  try { window.speechSynthesis?.cancel(); } catch { /* fine */ }
+}
+
+// One cleanup for every way out of a game screen.
+function opruimen() {
+  stilte();
+  stopAftellen();
+  geluid.stopMuziek();
+}
+
+function say(text, maxMs = 1500 + text.length * 90, gen = spraakGen) {
   return new Promise(resolve => {
-    if (!hasDutchVoice() || !game?.geluid) return resolve();
+    if (gen !== spraakGen || !hasDutchVoice() || !game?.geluid) return resolve();
     let done = false;
     const finish = () => { if (!done) { done = true; resolve(); } };
     speak(text, { rate: 0.85, onEnd: finish });
@@ -63,6 +82,7 @@ const goedeNamen = m => m.map(n => h('b', {}, n));
 // ---------- setup ----------
 
 function setupScherm() {
+  opruimen();
   screen = 'setup';
   const checks = [...themes.keys()].map((naam, i) => h('label', { class: 'thema-keuze' },
     h('input', { type: 'checkbox', name: 'thema', value: naam, checked: i === 0 }), ` ${naam}`));
@@ -215,9 +235,11 @@ function onMessage(m) {
       if (screen === 'ticket') exitTicketScherm();
       return;
     case 'vervangen':
+      opruimen();
       conn?.stop();
       return foutScherm('De studio is op een ander scherm geopend.');
     case 'einde': {
+      opruimen();
       conn?.stop();
       try { sessionStorage.removeItem(KEY); } catch {}
       if (m.reden === 'gestopt') return setupScherm();
@@ -284,6 +306,11 @@ function geweigerd(m) {
     toast('Dat lukte niet: de wedstrijd stond even stil. Probeer het nog eens.');
   }
   if (m.voor === 'afronden') game.afronden = false;
+  if (m.voor === 'tickets-tonen') {
+    toast('Nog niet genoeg leerlingen klaar om de resultaten anoniem te tonen.');
+    if (screen === 'ticket') exitTicketScherm();
+    return;
+  }
   verzoen(m.stand);
 }
 
@@ -344,6 +371,7 @@ function startSpel() {
 // the relay drops it (review Astra, round 2).
 async function volgendeVraag() {
   if (!game || game.pending) return;
+  stilte();
   const next = game.i + 1;
   if (next >= game.plan.length) return afronden();
   const v = game.plan[next];
@@ -367,8 +395,9 @@ async function volgendeVraag() {
       h('p', { class: 'studio-reus' }, 'voor DE GOUDEN KLOMP! 🥇👞'),
       h('p', {}, 'Dubbele punten. Iedereen kan nog winnen!')));
     geluid.stopMuziek();
+    const gen = spraakGen;
     await geluid.tromgeroffel(1600);
-    await say('Laatste vraag! Voor de gouden klomp!');
+    if (gen === spraakGen) await say('Laatste vraag! Voor de gouden klomp!', undefined, gen);
     await wait(800);
   }
   if (game.pending?.qid !== v.qid) return;
@@ -429,46 +458,54 @@ function vraagKlaar(qid) {
 
 // Show the question, play the sound, then open the answer window.
 // The sentence with a "piep" where the word goes.
-async function zegZinMetPiep(v) {
+async function zegZinMetPiep(v, gen = spraakGen) {
   const z = splitZin(v.word.zin);
-  if (z.voor.trim()) await say(z.voor);
+  if (z.voor.trim()) await say(z.voor, undefined, gen);
+  if (gen !== spraakGen) return;
   await geluid.piep();
-  if (z.na.replace(/[.!?,:;\s]/g, '')) await say(z.na);
+  if (gen !== spraakGen) return;
+  if (z.na.replace(/[.!?,:;\s]/g, '')) await say(z.na, undefined, gen);
 }
 
 function herhaal(v) {
+  stilte();   // a repeat replaces whatever was still being said
   if (v.vorm === 'luisterzin') return zegZinMetPiep(v);
   return say(v.word.woord);
 }
 
 async function stelVraag(v) {
   screen = 'vraag';
+  stilte();
+  const gen = spraakGen;
   geluid.stopMuziek();          // nothing may talk over the spoken question
   vraagScherm(v, false);
+  const nogSteeds = () => gen === spraakGen && screen === 'vraag' && game.plan[game.i] === v;
   if (v.vorm === 'spelling') {
-    await wait(600);
-    await say(v.word.woord);
-    await wait(400);
-    await say(v.word.woord);
+    await wait(600); if (!nogSteeds()) return;
+    await say(v.word.woord, undefined, gen); if (!nogSteeds()) return;
+    await wait(400); if (!nogSteeds()) return;
+    await say(v.word.woord, undefined, gen);
   } else if (v.vorm === 'luisterzin') {
-    await wait(600);
-    await zegZinMetPiep(v);
-    await wait(500);
-    await zegZinMetPiep(v);
+    await wait(600); if (!nogSteeds()) return;
+    await zegZinMetPiep(v, gen); if (!nogSteeds()) return;
+    await wait(500); if (!nogSteeds()) return;
+    await zegZinMetPiep(v, gen);
   } else {
     await wait(1200);
   }
-  if (screen !== 'vraag' || game.plan[game.i] !== v) return;
+  if (!nogSteeds()) return;
   conn.send({ t: 'open', qid: v.qid });
   vraagScherm(v, true);
 }
 
 // Music while the answer window is open, ticking in the last five seconds.
+let tikTimer = null;   // module-level: survives a new game object, so it can always be cleared
+
 function startAftellen(msLeft) {
   stopAftellen();
   geluid.speelMuziek('vraag');
   const einde = Date.now() + msLeft;
-  game.tikTimer = setInterval(() => {
+  tikTimer = setInterval(() => {
     const over = einde - Date.now();
     if (over <= 0) return stopAftellen();
     if (over <= 5000) geluid.tik();
@@ -476,7 +513,8 @@ function startAftellen(msLeft) {
 }
 
 function stopAftellen() {
-  clearInterval(game?.tikTimer);
+  clearInterval(tikTimer);
+  tikTimer = null;
   geluid.stopMuziek();
 }
 
@@ -494,7 +532,9 @@ function vraagScherm(v, open, msLeft = 15000) {
     const z = splitZin(v.word.zin);
     midden = h('p', { class: 'studio-zin' }, z.voor, h('span', { class: 'gat' }, '…'), z.na);
   } else {
-    midden = h('button', { class: 'luister reus', type: 'button', onclick: () => herhaal(v), 'aria-label': 'Herhaal' }, '🔊');
+    // Repeating only once the window is open: a repeat during the spoken
+    // intro would cancel it, and the question would never open.
+    midden = h('button', { class: 'luister reus', type: 'button', disabled: !open, onclick: () => herhaal(v), 'aria-label': 'Herhaal' }, '🔊');
   }
   show(h('main', { class: 'studio-vraag' },
     h('p', { class: 'studio-teller' }, `Vraag ${game.i + 1} van ${game.plan.length}`,
@@ -508,7 +548,7 @@ function vraagScherm(v, open, msLeft = 15000) {
       : h('p', { class: 'wstatus' }, '🔊 Luister…'),
     h('p', { class: 'teller-studio' }, ''),
     h('div', { class: 'studio-knoppen' },
-      v.vorm !== 'zin' ? h('button', { class: 'knop rustig', type: 'button', onclick: () => { geluid.stopMuziek(); herhaal(v); } }, '🔊 Nog een keer') : null,
+      v.vorm !== 'zin' && open ? h('button', { class: 'knop rustig', type: 'button', onclick: () => { geluid.stopMuziek(); herhaal(v); } }, '🔊 Nog een keer') : null,
       h('button', { class: 'knop rustig', type: 'button', onclick: () => conn.send({ t: 'pauze' }) }, '⏸️ Pauze')),
   ));
 }
@@ -516,6 +556,7 @@ function vraagScherm(v, open, msLeft = 15000) {
 // ---------- the show moment ----------
 
 function uitslag(m) {
+  stilte();
   stopAftellen();
   geluid.gong();
   const v = game.plan[game.i];
@@ -583,7 +624,8 @@ function uitslag(m) {
         isLaatste ? 'Prijsuitreiking! 🏆' : geenUitleg ? 'Uitgelegd! Verder ▶' : 'Volgende vraag ▶')),
   ));
   // After the gong, not on top of it.
-  setTimeout(() => say(`${lidwoord}${v.word.woord}. ${z ? plainZin(v.word.zin) : ''}`, 9000), 900);
+  const gen = spraakGen;
+  uitslagSpraak = setTimeout(() => say(`${lidwoord}${v.word.woord}. ${z ? plainZin(v.word.zin) : ''}`, 9000, gen), 900);
 }
 
 function volgendeKnopScherm() {
@@ -611,6 +653,7 @@ function top5(rij) {
 // ---------- the end ----------
 
 function finale(m) {
+  stilte();
   screen = 'finale';
   show(h('main', { class: 'studio-midden finale' },
     h('p', { class: 'eyebrow' }, 'De hele klas samen'),
@@ -655,20 +698,42 @@ const TICKET = [
 
 function exitTicketScherm() {
   screen = 'ticket';
-  const t = game.tickets || { telling: [[0, 0, 0], [0, 0, 0], [0, 0, 0]], ingevuld: 0, totaal: tribune.kandidaten.filter(k => k.toegelaten).length };
+  const t = game.tickets || { ingevuld: 0, totaal: tribune.kandidaten.filter(k => k.toegelaten).length, min: 3, open: true, telling: null };
+  // While pupils are still filling in, the board only shows how many are done.
+  // Totals appear once, on request, with at least t.min done; the ticket then
+  // closes, so no single pupil's answers can be read off (review Astra, 2 Nov).
+  let inhoud;
+  if (!t.telling) {
+    const kan = t.ingevuld >= t.min;
+    inhoud = [
+      h('p', { class: 'studio-groot' }, `${t.ingevuld} van de ${t.totaal} leerlingen zijn klaar.`),
+      h('p', {}, kan
+        ? 'Klaar om te tonen? Daarna sluit het exit-ticket.'
+        : `De resultaten kunnen pas getoond worden als minstens ${t.min} leerlingen klaar zijn. Zo is niemand te herkennen.`),
+      h('div', { class: 'studio-knoppen' },
+        h('button', { class: 'knop groot', type: 'button', disabled: !kan, onclick: e => {
+          e.currentTarget.disabled = true;
+          if (!conn.send({ t: 'tickets-tonen' })) { toast('Geen verbinding. Probeer het zo nog eens.'); e.currentTarget.disabled = false; }
+        } }, '📊 Toon resultaten')),
+    ];
+  } else {
+    inhoud = [
+      h('p', { class: 'studio-teller' }, `${t.ingevuld} van de ${t.totaal} leerlingen deden mee. Anoniem: alleen de totalen.`),
+      h('div', { class: 'ticket-grid' }, TICKET.map((q, i) => {
+        const n = t.telling[i];
+        const max = Math.max(1, ...n);
+        return h('section', { class: 'ticket-blok' },
+          h('h3', {}, q.vraag),
+          q.opties.map((o, k) => h('div', { class: 'ticket-rij' },
+            h('span', { class: 'ticket-label' }, o),
+            h('span', { class: 'ticket-balk' }, h('span', { style: `width:${(n[k] / max) * 100}%` })),
+            h('span', { class: 'ticket-aantal' }, String(n[k])))));
+      })),
+    ];
+  }
   show(h('main', { class: 'studio-ticket' },
     h('h2', {}, '📋 Exit-ticket'),
-    h('p', { class: 'studio-teller' }, `${t.ingevuld} van de ${t.totaal} leerlingen hebben alles ingevuld. Anoniem: alleen de totalen.`),
-    h('div', { class: 'ticket-grid' }, TICKET.map((q, i) => {
-      const n = t.telling[i];
-      const max = Math.max(1, ...n);
-      return h('section', { class: 'ticket-blok' },
-        h('h3', {}, q.vraag),
-        q.opties.map((o, k) => h('div', { class: 'ticket-rij' },
-          h('span', { class: 'ticket-label' }, o),
-          h('span', { class: 'ticket-balk' }, h('span', { style: `width:${(n[k] / max) * 100}%` })),
-          h('span', { class: 'ticket-aantal' }, String(n[k])))));
-    })),
+    inhoud,
     h('div', { class: 'studio-knoppen' },
       h('button', { class: 'knop rustig', type: 'button', onclick: () => { conn.send({ t: 'stoppen' }); } }, 'Klaar: studio sluiten')),
   ));
@@ -677,7 +742,7 @@ function exitTicketScherm() {
 // ---------- pause, errors, drawer ----------
 
 function pauzeScherm(reden) {
-  stopAftellen();
+  opruimen();
   screen = 'pauze';
   show(h('main', { class: 'studio-midden' },
     h('p', { class: 'studio-reus' }, '⏸️ Pauze'),
@@ -686,6 +751,7 @@ function pauzeScherm(reden) {
 }
 
 function foutScherm(tekst) {
+  opruimen();
   screen = 'fout';
   show(h('main', { class: 'studio-midden' },
     h('p', { class: 'studio-reus' }, 'Oei!'),
@@ -738,6 +804,19 @@ function statusBalk() {
 }
 
 // ---------- start ----------
+
+// Browsers only allow sound after a click. After a reload no "Open de
+// studio" click happens, so every click or key on the board unlocks it
+// (review Astra, 2 Nov). The unlock utterance is empty: nothing is heard.
+let spraakOntgrendeld = false;
+function ontgrendelAlles() {
+  geluid.ontgrendel();
+  if (!spraakOntgrendeld && 'speechSynthesis' in window) {
+    try { speechSynthesis.speak(new SpeechSynthesisUtterance('')); spraakOntgrendeld = true; } catch { /* fine */ }
+  }
+}
+document.addEventListener('pointerdown', ontgrendelAlles, { capture: true });
+document.addEventListener('keydown', ontgrendelAlles, { capture: true });
 
 async function main() {
   try {

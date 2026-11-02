@@ -173,6 +173,7 @@
 .ticket-opties { display: grid; gap: 10px; }
 .ticket-knop { font: inherit; font-size: 1.3rem; font-weight: 700; padding: 14px; border-radius: 14px; border: 2px solid var(--lijn); background: var(--papier); }
 .ticket-knop:disabled { opacity: 0.5; }
+.ticket-knop.gekozen { opacity: 1; outline: 3px solid var(--blauw); }
 .ticket-dank { font-size: 1.3rem; font-weight: 800; color: var(--goed); margin-top: 20px; }
 .diagnose { position: sticky; top: 0; z-index: 30; margin: 0 16px 8px; }
 .diagnose small { display: block; margin-top: 4px; }

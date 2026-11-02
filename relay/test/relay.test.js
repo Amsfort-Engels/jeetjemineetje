@@ -521,25 +521,37 @@ test('GET /ping answers, so a phone can tell a blocked network from a dead serve
   assert.equal(res.headers.get('access-control-allow-origin'), 'http://localhost:8765');
 });
 
-test('exit ticket: only after the finale, once per question, counts reach the studio', async () => {
-  const { t, players: [a, b] } = await startedGame(2);
+test('exit ticket: only after the finale, once per question; totals only on release, with at least 3 done', async () => {
+  const { t, players } = await startedGame(3);
+  const [a, b, c] = players;
   a.send({ t: 'ticket', vraag: 0, keuze: 0 });          // too early: ignored
   await assert.rejects(a.next(is('ticket-ontvangen'), 500));
   await ask(t, 'q1', 0);
   await a.next(is('open'));
-  a.send({ t: 'antwoord', qid: 'q1', keuze: 0 });
-  b.send({ t: 'antwoord', qid: 'q1', keuze: 1 });
+  for (const p of players) p.send({ t: 'antwoord', qid: 'q1', keuze: 0 });
   await t.next(is('uitslag'));
   t.send({ t: 'afronden' });
-  await a.next(is('finale'));
-  a.send({ t: 'ticket', vraag: 0, keuze: 0 });
+  for (const p of players) await p.next(is('finale'));
+
+  const vul = async (p, keuzes) => { for (let v = 0; v < 3; v++) { p.send({ t: 'ticket', vraag: v, keuze: keuzes[v] }); await p.next(m => m.t === 'ticket-ontvangen' && m.vraag === v); } };
+  await vul(a, [0, 1, 2]);
+  const na1 = await t.next(is('tickets'));
+  assert.equal(na1.ingevuld, 1);
+  assert.equal(na1.telling, null, 'no totals while pupils are still filling in');
+  a.send({ t: 'ticket', vraag: 0, keuze: 2 });          // again: acknowledged, not counted
   await a.next(is('ticket-ontvangen'));
-  a.send({ t: 'ticket', vraag: 0, keuze: 2 });          // second answer to the same question: not counted
-  await a.next(is('ticket-ontvangen'));
-  b.send({ t: 'ticket', vraag: 0, keuze: 2 });
-  await b.next(is('ticket-ontvangen'));
+
+  t.send({ t: 'tickets-tonen' });                       // only 1 done: refused
+  assert.equal((await t.next(is('geweigerd'))).voor, 'tickets-tonen');
+
+  await vul(b, [0, 0, 0]);
+  await vul(c, [2, 1, 0]);
+  t.send({ t: 'tickets-tonen' });
   let st;
-  do { st = await t.next(is('tickets')); } while (st.telling[0][2] < 1);
-  assert.deepEqual(st.telling[0], [1, 0, 1]);
-  assert.equal(st.totaal, 2);
+  do { st = await t.next(is('tickets')); } while (!st.telling);
+  assert.deepEqual(st.telling, [[2, 0, 1], [1, 2, 0], [2, 0, 1]]);
+  assert.equal(st.open, false);
+  await a.next(is('ticket-dicht'));
+  a.send({ t: 'ticket', vraag: 1, keuze: 0 });          // after release: closed
+  await a.next(is('ticket-dicht'));
 });

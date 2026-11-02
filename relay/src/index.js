@@ -21,6 +21,7 @@ const MAX_ROOM_MS = 3 * 60 * 60_000;
 const MAX_MSG_BYTES = 4_096;
 const MSG_PER_SECOND = 20;
 const POINTS = 100;
+const TICKET_MIN = 3;   // exit-ticket totals only shown with at least this many pupils done
 const STREAK_BONUS = 25;
 
 // ---------- worker: routing, room creation, CORS ----------
@@ -172,7 +173,11 @@ export class Room extends DurableObject {
       byTokenHash: new Map(),     // token hash -> id
       usedNames: new Set(),
       // Exit ticket: counts only, per question and answer. Who answered what is not kept.
+      // Totals are only released at once, by the teacher, with at least 3 pupils done;
+      // live totals would let the board work out one pupil's answers (review Astra).
       ticket: [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+      ticketOpen: true,
+      ticketResult: null,
       nextId: 1,
       question: null,
       history: [],                // per closed question: { qid, double, results: Map(id -> correct) }
@@ -452,6 +457,7 @@ export class Room extends DurableObject {
         return;
       }
       case 'afronden': return this.finish();
+      case 'tickets-tonen': return this.releaseTickets();
       case 'stoppen': return this.endGame('gestopt');
       case 'ping': send(g.teacherWs, { t: 'pong' }); return;
       default: return;
@@ -556,12 +562,14 @@ export class Room extends DurableObject {
     }
     if (msg.t === 'ticket') {
       if (g.phase !== 'final' || !p.admitted || !isInt(msg.vraag, 0, 2) || !isInt(msg.keuze, 0, 2)) return;
+      if (!g.ticketOpen) { send(p.ws, { t: 'ticket-dicht' }); return; }
       p.ticketDone ??= new Set();
       if (p.ticketDone.has(msg.vraag)) { send(p.ws, { t: 'ticket-ontvangen', vraag: msg.vraag }); return; }
       p.ticketDone.add(msg.vraag);
       g.ticket[msg.vraag][msg.keuze]++;
       send(p.ws, { t: 'ticket-ontvangen', vraag: msg.vraag });
-      this.toTeacher(this.ticketState());
+      // Only *how many are done* goes to the board, never the running totals.
+      if (p.ticketDone.size === 3) this.toTeacher(this.ticketState());
       return;
     }
     if (msg.t === 'andere-naam') {
@@ -740,7 +748,7 @@ export class Room extends DurableObject {
       score: p.score, plaats: p.admitted ? this.ranking().findIndex(x => x.id === p.id) + 1 : null,
       vraag: null,
     };
-    if (g.phase === 'final' && p.finale) { snap.finale = p.finale; snap.ticketKlaar = [...(p.ticketDone ?? [])]; }
+    if (g.phase === 'final' && p.finale) { snap.finale = p.finale; snap.ticketKlaar = [...(p.ticketDone ?? [])]; snap.ticketOpen = g.ticketOpen; }
     if (g.phase === 'reveal' && p.lastResult && p.lastResult.qid === q?.qid) snap.uitslag = p.lastResult;
     if (q && !q.void && ['locked', 'open'].includes(g.phase)) {
       const a = p.answers.get(q.qid);
@@ -756,7 +764,22 @@ export class Room extends DurableObject {
   ticketState() {
     const g = this.game;
     const admitted = [...g.players.values()].filter(p => p.admitted);
-    return { t: 'tickets', telling: g.ticket, ingevuld: admitted.filter(p => p.ticketDone?.size === 3).length, totaal: admitted.length };
+    return {
+      t: 'tickets', ingevuld: admitted.filter(p => p.ticketDone?.size === 3).length, totaal: admitted.length,
+      min: TICKET_MIN, open: g.ticketOpen, telling: g.ticketResult,   // null until released
+    };
+  }
+
+  // The teacher releases the totals once; the ticket closes at the same moment,
+  // so later answers can't be read off as differences.
+  releaseTickets() {
+    const g = this.game;
+    if (g.phase !== 'final' || !g.ticketOpen) { this.toTeacher(this.ticketState()); return; }
+    if (this.ticketState().ingevuld < TICKET_MIN) { this.refuse('tickets-tonen'); return; }
+    g.ticketOpen = false;
+    g.ticketResult = g.ticket.map(row => [...row]);
+    this.toPlayers({ t: 'ticket-dicht' });
+    this.toTeacher(this.ticketState());
   }
 
   // Where the game really is, for the studio to reconcile against.
