@@ -77,7 +77,7 @@ Vraagvormen in de Wedstrijd, gekozen omdat ze op een gedeeld scherm werken:
 
 | Vorm | Op het bord | Op de telefoon |
 |---|---|---|
-| **Luister** | 🔊 het bord zegt het woord | vier woorden |
+| **Luisterzin** (sinds 2 nov) | 🔊 het bord leest de zin voor, met een piep op het gat | vier woorden |
 | **Zin** | zin met een gat | vier woorden |
 | **Spelling** | 🔊 het bord zegt het woord | vier spellingen (de gecontroleerde uit `spelfouten.csv`) |
 

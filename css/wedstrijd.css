@@ -165,3 +165,25 @@
   .podium { grid-template-columns: 1fr; }
   .podium .plek1, .podium .plek2, .podium .plek3 { order: 0; padding-top: 20px; }
 }
+
+/* ---------- exit ticket and connection diagnosis ---------- */
+.ticket { margin-top: 24px; background: var(--kaart); border: 2px solid var(--lijn); border-radius: 18px; padding: 16px; }
+.ticket-kop { margin: 0 0 4px; color: var(--inkt-zacht); font-size: 0.95rem; }
+.ticket-vraag { font-weight: 800; font-size: 1.25rem; margin: 0 0 12px; }
+.ticket-opties { display: grid; gap: 10px; }
+.ticket-knop { font: inherit; font-size: 1.3rem; font-weight: 700; padding: 14px; border-radius: 14px; border: 2px solid var(--lijn); background: var(--papier); }
+.ticket-knop:disabled { opacity: 0.5; }
+.ticket-dank { font-size: 1.3rem; font-weight: 800; color: var(--goed); margin-top: 20px; }
+.diagnose { position: sticky; top: 0; z-index: 30; margin: 0 16px 8px; }
+.diagnose small { display: block; margin-top: 4px; }
+
+/* ---------- exit ticket on the board ---------- */
+.studio-ticket { display: flex; flex-direction: column; gap: 16px; padding-top: 2vh; }
+.studio-ticket h2 { font-size: 2em; margin: 0; }
+.ticket-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.ticket-blok { background: var(--kaart); border: 2px solid var(--lijn); border-radius: 20px; padding: 16px 20px; }
+.ticket-blok h3 { margin: 0 0 12px; font-size: 1.2em; }
+.ticket-rij { display: grid; grid-template-columns: 7.5em 1fr 2em; align-items: center; gap: 10px; margin: 8px 0; font-size: 1.1em; }
+.ticket-balk { height: 22px; background: var(--lijn); border-radius: 99px; overflow: hidden; }
+.ticket-balk span { display: block; height: 100%; background: var(--blauw); border-radius: 99px; transition: width 0.4s; }
+.ticket-aantal { font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }

@@ -1,7 +1,7 @@
 import { loadWords, groupByTheme, isImageFile, splitZin, plainZin } from './data.js';
 import * as leitner from './leitner.js';
 import { isCorrect, isAlmost } from './answer.js';
-import { otherWords } from './vragen.js';
+import { otherWords, lijkendeWoorden } from './vragen.js';
 import { RELAY_READY } from './config.js';
 import { uitroep } from './uitroepen.js';
 import { initSpeech, hasDutchVoice, speak } from './speech.js';
@@ -183,7 +183,8 @@ function ask(state) {
 
   let body;
   if (type === 'luister') {
-    body = [h('p', { class: 'opdracht' }, 'Luister. Welk woord hoor je?'), listenBox(), wordChoices()];
+    const lijkend = choices(lijkendeWoorden(word, state.words).map(o => ({ label: o.woord, goed: o.woord === word.woord })));
+    body = [h('p', { class: 'opdracht' }, 'Luister. Welk woord hoor je?'), listenBox(), lijkend];
   } else if (type === 'zin') {
     body = [
       h('p', { class: 'opdracht' }, 'Welk woord past?'),

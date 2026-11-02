@@ -29,7 +29,7 @@ const ALLOWED_ORIGINS = ['https://amsfort-engels.github.io', 'http://localhost:8
 
 function cors(origin) {
   return ALLOWED_ORIGINS.includes(origin)
-    ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'content-type', 'Vary': 'Origin' }
+    ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST', 'Access-Control-Allow-Headers': 'content-type', 'Vary': 'Origin' }
     : {};
 }
 
@@ -77,6 +77,10 @@ export default {
       }
       return json({ error: 'geen-code' }, 503, origin);
     }
+
+    // GET /ping: a plain HTTP check. If this works but the WebSocket doesn't,
+    // the network is blocking live connections (feedback Els, 13 Oct).
+    if (url.pathname === '/ping' && request.method === 'GET') return json({ ok: true }, 200, origin);
 
     // GET /rooms/<code>/ws -> WebSocket to that room
     const m = /^\/rooms\/([^/]+)\/ws$/.exec(url.pathname);
@@ -167,6 +171,8 @@ export class Room extends DurableObject {
       players: new Map(),         // id -> player
       byTokenHash: new Map(),     // token hash -> id
       usedNames: new Set(),
+      // Exit ticket: counts only, per question and answer. Who answered what is not kept.
+      ticket: [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
       nextId: 1,
       question: null,
       history: [],                // per closed question: { qid, double, results: Map(id -> correct) }
@@ -309,7 +315,7 @@ export class Room extends DurableObject {
       g.teacherGoneTimer = null;
       // Snapshot so a reloaded studio can reconcile its plan (review Astra #2).
       send(conn.ws, { t: 'welkom-studio', gameId: g.id, code: g.code, ...this.teacherSnapshot() });
-      if (g.phase === 'final' && g.finale) send(conn.ws, g.finale);
+      if (g.phase === 'final' && g.finale) { send(conn.ws, g.finale); send(conn.ws, this.ticketState()); }
       this.toTeacher(this.lobbyState());
       if (g.phase === 'paused' && g.pausedBecause === 'studio-weg') {
         // Back within the grace period: stay paused until the teacher continues.
@@ -504,7 +510,7 @@ export class Room extends DurableObject {
     g.question = {
       qid: msg.qid, labels: msg.knoppen, correct: msg.goed, double: msg.dubbel === true,
       // Only used for titles at the end; unknown values are ignored.
-      kind: ['luister', 'zin', 'spelling'].includes(msg.vorm) ? msg.vorm : null,
+      kind: ['luister', 'luisterzin', 'zin', 'spelling'].includes(msg.vorm) ? (msg.vorm === 'luisterzin' ? 'luister' : msg.vorm) : null,
       retry: msg.herkansing === true,
       openedAt: null, deadline: null, timer: null, void: false,
     };
@@ -546,6 +552,16 @@ export class Room extends DurableObject {
       // briefly lost its connection keeps its remaining answer time (review Astra #4).
       const admitted = [...g.players.values()].filter(x => x.admitted);
       if (admitted.length && admitted.every(x => x.answers.has(q.qid))) this.closeQuestion();
+      return;
+    }
+    if (msg.t === 'ticket') {
+      if (g.phase !== 'final' || !p.admitted || !isInt(msg.vraag, 0, 2) || !isInt(msg.keuze, 0, 2)) return;
+      p.ticketDone ??= new Set();
+      if (p.ticketDone.has(msg.vraag)) { send(p.ws, { t: 'ticket-ontvangen', vraag: msg.vraag }); return; }
+      p.ticketDone.add(msg.vraag);
+      g.ticket[msg.vraag][msg.keuze]++;
+      send(p.ws, { t: 'ticket-ontvangen', vraag: msg.vraag });
+      this.toTeacher(this.ticketState());
       return;
     }
     if (msg.t === 'andere-naam') {
@@ -724,7 +740,7 @@ export class Room extends DurableObject {
       score: p.score, plaats: p.admitted ? this.ranking().findIndex(x => x.id === p.id) + 1 : null,
       vraag: null,
     };
-    if (g.phase === 'final' && p.finale) snap.finale = p.finale;
+    if (g.phase === 'final' && p.finale) { snap.finale = p.finale; snap.ticketKlaar = [...(p.ticketDone ?? [])]; }
     if (g.phase === 'reveal' && p.lastResult && p.lastResult.qid === q?.qid) snap.uitslag = p.lastResult;
     if (q && !q.void && ['locked', 'open'].includes(g.phase)) {
       const a = p.answers.get(q.qid);
@@ -735,6 +751,12 @@ export class Room extends DurableObject {
       };
     }
     send(p.ws, snap);
+  }
+
+  ticketState() {
+    const g = this.game;
+    const admitted = [...g.players.values()].filter(p => p.admitted);
+    return { t: 'tickets', telling: g.ticket, ingevuld: admitted.filter(p => p.ticketDone?.size === 3).length, totaal: admitted.length };
   }
 
   // Where the game really is, for the studio to reconcile against.

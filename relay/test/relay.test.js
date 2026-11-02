@@ -512,3 +512,34 @@ test('a studio that was away while the question closed gets the result in its sn
   assert.equal(w.uitslag?.qid, 'q2');
   assert.equal(w.uitslag?.aantalGoed, 1);
 });
+
+// ---------- feedback Els, 2 Nov ----------
+
+test('GET /ping answers, so a phone can tell a blocked network from a dead server', async () => {
+  const res = await fetch(`${BASE}/ping`, { headers: { Origin: 'http://localhost:8765' } });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('access-control-allow-origin'), 'http://localhost:8765');
+});
+
+test('exit ticket: only after the finale, once per question, counts reach the studio', async () => {
+  const { t, players: [a, b] } = await startedGame(2);
+  a.send({ t: 'ticket', vraag: 0, keuze: 0 });          // too early: ignored
+  await assert.rejects(a.next(is('ticket-ontvangen'), 500));
+  await ask(t, 'q1', 0);
+  await a.next(is('open'));
+  a.send({ t: 'antwoord', qid: 'q1', keuze: 0 });
+  b.send({ t: 'antwoord', qid: 'q1', keuze: 1 });
+  await t.next(is('uitslag'));
+  t.send({ t: 'afronden' });
+  await a.next(is('finale'));
+  a.send({ t: 'ticket', vraag: 0, keuze: 0 });
+  await a.next(is('ticket-ontvangen'));
+  a.send({ t: 'ticket', vraag: 0, keuze: 2 });          // second answer to the same question: not counted
+  await a.next(is('ticket-ontvangen'));
+  b.send({ t: 'ticket', vraag: 0, keuze: 2 });
+  await b.next(is('ticket-ontvangen'));
+  let st;
+  do { st = await t.next(is('tickets')); } while (st.telling[0][2] < 1);
+  assert.deepEqual(st.telling[0], [1, 0, 1]);
+  assert.equal(st.totaal, 2);
+});

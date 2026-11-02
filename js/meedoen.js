@@ -3,6 +3,7 @@
 // only sends choices ("knop 3 bij vraag 7") and shows what it hears back.
 
 import { Verbinding } from './verbinding.js';
+import { RELAY } from './config.js';
 import { uitroep } from './uitroepen.js';
 
 const app = document.getElementById('app');
@@ -149,15 +150,45 @@ function uitslagScherm(m) {
   ));
 }
 
+// Exit ticket (feedback Els): three questions, answered with a tap. Only the
+// totals reach the board; who answered what is not kept anywhere.
+const TICKET = [
+  { vraag: 'Hoe vond je het spel?', opties: ['😀', '😐', '😕'] },
+  { vraag: 'Hoe moeilijk waren de woorden?', opties: ['🟢 makkelijk', '🟡 goed', '🔴 moeilijk'] },
+  { vraag: 'Wat vond je het leukst?', opties: ['🔊 luisteren', '✍️ spelling', '📝 zinnen'] },
+];
+let finaleData = null;
+let ticketKlaar = new Set();
+
 function finaleScherm(m) {
+  finaleData = m;
   const plek = m.plaats <= 3 ? ['🥇', '🥈', '🥉'][m.plaats - 1] : '🎉';
+  const open = TICKET.map((q, i) => ({ ...q, i })).filter(q => !ticketKlaar.has(q.i));
+  const ticket = open.length
+    ? h('section', { class: 'ticket' },
+        h('p', { class: 'ticket-kop' }, 'Nog even voor de juf:'),
+        open.slice(0, 1).map(q => h('div', {},
+          h('p', { class: 'ticket-vraag' }, q.vraag),
+          h('div', { class: 'ticket-opties' }, q.opties.map((o, k) => h('button', {
+            class: 'ticket-knop', type: 'button',
+            onclick: e => {
+              for (const b of e.currentTarget.parentElement.querySelectorAll('button')) b.disabled = true;
+              if (!conn?.send({ t: 'ticket', vraag: q.i, keuze: k })) {
+                // Not connected: mark it done locally anyway, so nobody gets stuck.
+                ticketKlaar.add(q.i); finaleScherm(finaleData);
+              }
+            },
+          }, o))))))
+    : h('p', { class: 'ticket-dank' }, 'Dank je wel! 💚');
   show(naamkaart(), h('main', { class: 'scherm einde' },
     h('p', { class: 'uitroep groot' }, m.plaats === 1 ? 'Nou breekt mijn klomp!' : 'Sjonge jonge, goed gedaan!'),
     h('p', { class: 'finale-plek' }, plek),
     m.titel ? h('p', { class: 'titel' }, m.titel) : h('p', { class: 'titel' }, `Plek ${m.plaats}!`),
     h('p', { class: 'wscore' }, h('b', {}, String(m.score)), ' punten'),
     h('p', {}, `De hele klas samen: ${m.klassenscore} goede antwoorden!`),
+    ticket,
   ));
+  if (!open.length) { stopConn(); clearSession(); }   // all done: nothing left to connect for
 }
 
 function eindScherm(tekst) {
@@ -194,9 +225,49 @@ function stopConn() {
   conn = null;
 }
 
+// Connection trouble (feedback Els: some phones never got in). After two
+// failed attempts, check whether the server answers plain HTTP. If it does,
+// the network is blocking the live connection; if not, the server isn't
+// reachable from this network at all. Either way: try mobile data.
+let mislukt = 0;
+let diagnoseBezig = false;
+
+function toonDiagnose(tekst) {
+  let el = document.getElementById('diagnose');
+  if (!tekst) { el?.remove(); return; }
+  if (!el) { el = h('div', { id: 'diagnose', class: 'melding diagnose', role: 'status' }); document.body.prepend(el); }
+  el.replaceChildren(h('b', {}, 'Oei! Het lukt niet om te verbinden. '), tekst,
+    h('small', {}, 'De app blijft het ondertussen proberen.'));
+}
+
+async function diagnose() {
+  if (diagnoseBezig) return;
+  diagnoseBezig = true;
+  let serverBereikbaar = false;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch(`${RELAY}/ping`, { signal: ctrl.signal, cache: 'no-store' });
+    clearTimeout(timer);
+    serverBereikbaar = res.ok;
+  } catch { /* unreachable */ }
+  diagnoseBezig = false;
+  if (mislukt === 0) return;   // got through meanwhile
+  toonDiagnose(serverBereikbaar
+    ? 'Dit netwerk blokkeert de live verbinding. Zet je wifi uit en gebruik 4G.'
+    : 'Dit netwerk kan de wedstrijd niet bereiken. Zet je wifi uit en gebruik 4G.');
+}
+
+function verbindingsStatus(s) {
+  app.classList.toggle('offline', s !== 'verbonden');
+  if (s === 'verbonden') { mislukt = 0; toonDiagnose(null); return; }
+  if (s === 'weg' && !me && ++mislukt >= 2) diagnose();
+}
+
 function start(code) {
   stopConn();
-  me = null; vraag = null; klaar = false;
+  me = null; vraag = null; klaar = false; mislukt = 0;
+  finaleData = null; ticketKlaar = new Set();
   session = session?.code === code ? session : { code };
   wachtScherm();
   conn = new Verbinding({
@@ -205,7 +276,7 @@ function start(code) {
       ? { t: 'hello', role: 'player', token: session.token, gameId: session.gameId }
       : { t: 'hello', role: 'player' }),
     onMessage,
-    onStatus: s => app.classList.toggle('offline', s !== 'verbonden'),
+    onStatus: verbindingsStatus,
   });
 }
 
@@ -225,7 +296,7 @@ function onMessage(m) {
       return wachtScherm();
     case 'stand': {
       me = { ...me, naam: m.naam, emoji: m.emoji, toegelaten: m.toegelaten };
-      if (m.finale) return toonFinale(m.finale);
+      if (m.finale) return toonFinale(m.finale, m.ticketKlaar || []);
       if (m.fase === 'paused') { stopVraagTimers(); return pauzeScherm(); }
       if (m.uitslag) { stopVraagTimers(); vraag = null; return uitslagScherm(m.uitslag); }
       if (m.vraag) {
@@ -287,8 +358,12 @@ function onMessage(m) {
     case 'vervangen':
       stopConn();
       return show(h('main', { class: 'scherm einde' }, h('p', {}, 'Je speelt nu verder op een ander scherm.')));
+    case 'ticket-ontvangen':
+      ticketKlaar.add(m.vraag);
+      if (finaleData) finaleScherm(finaleData);
+      return;
     case 'einde': {
-      if (klaar) { stopConn(); return; }
+      if (klaar) { stopConn(); clearSession(); return; }
       const teksten = {
         gestopt: 'De juf heeft de wedstrijd gestopt.',
         verwijderd: 'Je doet niet meer mee aan deze wedstrijd.',
@@ -305,10 +380,11 @@ function onMessage(m) {
 
 // The game is over: stop the connection and its timers first, then forget
 // the credentials (review Astra #6), then show the result.
-function toonFinale(m) {
+// The game is over. The connection stays open for the exit ticket; once that
+// is filled in (or the studio closes), connection and credentials go.
+function toonFinale(m, done = []) {
   klaar = true;
-  stopConn();
-  clearSession();
+  for (const i of done) ticketKlaar.add(i);
   finaleScherm(m);
 }
 

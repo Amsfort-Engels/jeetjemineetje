@@ -11,6 +11,7 @@ import { initSpeech, hasDutchVoice, speak, voiceName } from './speech.js';
 import { RELAY } from './config.js';
 import { Verbinding } from './verbinding.js';
 import qrcode from './vendor/qrcode.mjs';
+import * as geluid from './geluid.js';
 
 const root = document.getElementById('studio');
 const KEY = 'jm-studio';
@@ -81,6 +82,7 @@ function setupScherm() {
       if (!gekozen.length) return;
       // Spoken inside the click, so the browser allows speech for the rest of the game.
       speak('Welkom in de studio!');
+      geluid.ontgrendel();
       openStudio(gekozen, Number(aantal.value));
     } },
       h('fieldset', {}, h('legend', {}, 'Welke thema\'s?'), checks),
@@ -95,7 +97,10 @@ function vraagVormen(word) {
   const v = [];
   if (splitZin(word.zin)) v.push('zin');
   if (hasDutchVoice()) {
-    v.push('luister');
+    // "Welk woord hoor je?" was far too easy (Els, 13 Oct): four different words
+    // are told apart by sound alone. Instead the board reads the sentence with a
+    // "piep" where the word goes, and the class picks the word that fits.
+    if (splitZin(word.zin)) v.push('luisterzin');
     if (word.spelfouten.length >= 2) v.push('spelling');
   }
   return v;
@@ -202,7 +207,13 @@ function onMessage(m) {
       return;
     case 'finale':
       clearTimeout(game?.afrondTimer);
+      stopAftellen();
+      if (screen === 'podium' || screen === 'ticket') return;   // a repeated finale: stay where we are
       return finale(m);
+    case 'tickets':
+      game.tickets = m;
+      if (screen === 'ticket') exitTicketScherm();
+      return;
     case 'vervangen':
       conn?.stop();
       return foutScherm('De studio is op een ander scherm geopend.');
@@ -277,6 +288,7 @@ function geweigerd(m) {
 }
 
 function lobbyScherm() {
+  if (screen !== 'lobby') geluid.speelMuziek('lobby');
   screen = 'lobby';
   const url = new URL('meedoen.html', location.href);
   url.searchParams.set('code', room.code);
@@ -313,6 +325,8 @@ function lobbyScherm() {
 function startSpel() {
   if (game.gestart) return;
   speak('Daar gaan we!');   // inside the click: keeps speech unlocked after a reload
+  geluid.ontgrendel();
+  geluid.stopMuziek();
   if (!conn.send({ t: 'start', aantal: game.plan.length })) return toast('Geen verbinding. Probeer het zo nog eens.');
   // If this "start" is lost, the next reconnect snapshot says gestart:false
   // and the Start button works again.
@@ -352,8 +366,10 @@ async function volgendeVraag() {
       h('p', { class: 'studio-groot' }, 'Laatste vraag…'),
       h('p', { class: 'studio-reus' }, 'voor DE GOUDEN KLOMP! 🥇👞'),
       h('p', {}, 'Dubbele punten. Iedereen kan nog winnen!')));
+    geluid.stopMuziek();
+    await geluid.tromgeroffel(1600);
     await say('Laatste vraag! Voor de gouden klomp!');
-    await wait(1500);
+    await wait(800);
   }
   if (game.pending?.qid !== v.qid) return;
   verstuurPending();
@@ -412,14 +428,33 @@ function vraagKlaar(qid) {
 }
 
 // Show the question, play the sound, then open the answer window.
+// The sentence with a "piep" where the word goes.
+async function zegZinMetPiep(v) {
+  const z = splitZin(v.word.zin);
+  if (z.voor.trim()) await say(z.voor);
+  await geluid.piep();
+  if (z.na.replace(/[.!?,:;\s]/g, '')) await say(z.na);
+}
+
+function herhaal(v) {
+  if (v.vorm === 'luisterzin') return zegZinMetPiep(v);
+  return say(v.word.woord);
+}
+
 async function stelVraag(v) {
   screen = 'vraag';
+  geluid.stopMuziek();          // nothing may talk over the spoken question
   vraagScherm(v, false);
-  if (v.vorm === 'luister' || v.vorm === 'spelling') {
+  if (v.vorm === 'spelling') {
     await wait(600);
     await say(v.word.woord);
     await wait(400);
     await say(v.word.woord);
+  } else if (v.vorm === 'luisterzin') {
+    await wait(600);
+    await zegZinMetPiep(v);
+    await wait(500);
+    await zegZinMetPiep(v);
   } else {
     await wait(1200);
   }
@@ -428,15 +463,38 @@ async function stelVraag(v) {
   vraagScherm(v, true);
 }
 
+// Music while the answer window is open, ticking in the last five seconds.
+function startAftellen(msLeft) {
+  stopAftellen();
+  geluid.speelMuziek('vraag');
+  const einde = Date.now() + msLeft;
+  game.tikTimer = setInterval(() => {
+    const over = einde - Date.now();
+    if (over <= 0) return stopAftellen();
+    if (over <= 5000) geluid.tik();
+  }, 1000);
+}
+
+function stopAftellen() {
+  clearInterval(game?.tikTimer);
+  geluid.stopMuziek();
+}
+
 function vraagScherm(v, open, msLeft = 15000) {
   screen = 'vraag';
-  const opdracht = { luister: 'Luister! Welk woord hoor je?', spelling: 'Luister! Hoe schrijf je het?', zin: 'Welk woord past?' }[v.vorm];
+  if (open) startAftellen(msLeft); else stopAftellen();
+  const opdracht = {
+    luisterzin: 'Luister naar de zin. Welk woord hoort op de piep?',
+    luister: 'Luister! Welk woord hoor je?',   // games saved before 2 Nov
+    spelling: 'Luister! Hoe schrijf je het?',
+    zin: 'Welk woord past?',
+  }[v.vorm];
   let midden;
   if (v.vorm === 'zin') {
     const z = splitZin(v.word.zin);
     midden = h('p', { class: 'studio-zin' }, z.voor, h('span', { class: 'gat' }, '…'), z.na);
   } else {
-    midden = h('button', { class: 'luister reus', type: 'button', onclick: () => say(v.word.woord), 'aria-label': 'Herhaal' }, '🔊');
+    midden = h('button', { class: 'luister reus', type: 'button', onclick: () => herhaal(v), 'aria-label': 'Herhaal' }, '🔊');
   }
   show(h('main', { class: 'studio-vraag' },
     h('p', { class: 'studio-teller' }, `Vraag ${game.i + 1} van ${game.plan.length}`,
@@ -450,7 +508,7 @@ function vraagScherm(v, open, msLeft = 15000) {
       : h('p', { class: 'wstatus' }, '🔊 Luister…'),
     h('p', { class: 'teller-studio' }, ''),
     h('div', { class: 'studio-knoppen' },
-      v.vorm !== 'zin' ? h('button', { class: 'knop rustig', type: 'button', onclick: () => say(v.word.woord) }, '🔊 Nog een keer') : null,
+      v.vorm !== 'zin' ? h('button', { class: 'knop rustig', type: 'button', onclick: () => { geluid.stopMuziek(); herhaal(v); } }, '🔊 Nog een keer') : null,
       h('button', { class: 'knop rustig', type: 'button', onclick: () => conn.send({ t: 'pauze' }) }, '⏸️ Pauze')),
   ));
 }
@@ -458,6 +516,8 @@ function vraagScherm(v, open, msLeft = 15000) {
 // ---------- the show moment ----------
 
 function uitslag(m) {
+  stopAftellen();
+  geluid.gong();
   const v = game.plan[game.i];
   if (!v || v.qid !== m.qid) return;
   screen = 'uitslag';
@@ -522,7 +582,8 @@ function uitslag(m) {
       h('button', { class: 'knop groot', type: 'button', onclick: e => { e.currentTarget.disabled = true; isLaatste ? afronden() : volgendeVraag(); } },
         isLaatste ? 'Prijsuitreiking! 🏆' : geenUitleg ? 'Uitgelegd! Verder ▶' : 'Volgende vraag ▶')),
   ));
-  say(`${lidwoord}${v.word.woord}. ${z ? plainZin(v.word.zin) : ''}`, 9000);
+  // After the gong, not on top of it.
+  setTimeout(() => say(`${lidwoord}${v.word.woord}. ${z ? plainZin(v.word.zin) : ''}`, 9000), 900);
 }
 
 function volgendeKnopScherm() {
@@ -556,11 +617,18 @@ function finale(m) {
     h('p', { class: 'studio-mega' }, String(m.klassenscore)),
     h('p', { class: 'studio-groot' }, 'goede antwoorden!'),
     h('p', { class: 'studio-reus' }, 'Wat een klas, jeetje mineetje!'),
-    h('button', { class: 'knop groot', type: 'button', onclick: () => podium(m) }, 'En de winnaars zijn… 🥁')));
+    h('button', { class: 'knop groot', type: 'button', onclick: async e => {
+      e.currentTarget.disabled = true;
+      geluid.ontgrendel();
+      await geluid.tromgeroffel(2200);
+      podium(m);
+    } }, 'En de winnaars zijn… 🥁')));
   say(`Samen ${m.klassenscore} goede antwoorden! Wat een klas, jeetje mineetje!`, 9000);
 }
 
 function podium(m) {
+  screen = 'podium';
+  geluid.fanfare();
   const medailles = ['🥇', '🥈', '🥉'];
   show(h('main', { class: 'studio-finale' },
     h('ol', { class: 'podium' }, m.podium.map((p, i) => h('li', { class: `plek${i + 1}` },
@@ -570,14 +638,46 @@ function podium(m) {
       h('h2', {}, 'En verder…'),
       h('ul', {}, m.titels.map(t => h('li', {}, h('b', {}, t.titel), ` ${t.emoji} ${t.naam}`)))) : null,
     h('div', { class: 'studio-knoppen' },
-      h('button', { class: 'knop', type: 'button', onclick: () => { conn.send({ t: 'stoppen' }); } }, 'Klaar: studio sluiten')),
+      h('button', { class: 'knop groot', type: 'button', onclick: exitTicketScherm }, '📋 Exit-ticket'),
+      h('button', { class: 'knop rustig', type: 'button', onclick: () => { conn.send({ t: 'stoppen' }); } }, 'Klaar: studio sluiten')),
   ));
   if (m.podium[0]) say(`Nou breekt mijn klomp! De winnaar is ${m.podium[0].naam}!`, 9000);
+}
+
+// ---------- exit ticket ----------
+
+// Same questions as on the phones (js/meedoen.js). The relay sends totals only.
+const TICKET = [
+  { vraag: 'Hoe vond je het spel?', opties: ['😀', '😐', '😕'] },
+  { vraag: 'Hoe moeilijk waren de woorden?', opties: ['🟢 makkelijk', '🟡 goed', '🔴 moeilijk'] },
+  { vraag: 'Wat vond je het leukst?', opties: ['🔊 luisteren', '✍️ spelling', '📝 zinnen'] },
+];
+
+function exitTicketScherm() {
+  screen = 'ticket';
+  const t = game.tickets || { telling: [[0, 0, 0], [0, 0, 0], [0, 0, 0]], ingevuld: 0, totaal: tribune.kandidaten.filter(k => k.toegelaten).length };
+  show(h('main', { class: 'studio-ticket' },
+    h('h2', {}, '📋 Exit-ticket'),
+    h('p', { class: 'studio-teller' }, `${t.ingevuld} van de ${t.totaal} leerlingen hebben alles ingevuld. Anoniem: alleen de totalen.`),
+    h('div', { class: 'ticket-grid' }, TICKET.map((q, i) => {
+      const n = t.telling[i];
+      const max = Math.max(1, ...n);
+      return h('section', { class: 'ticket-blok' },
+        h('h3', {}, q.vraag),
+        q.opties.map((o, k) => h('div', { class: 'ticket-rij' },
+          h('span', { class: 'ticket-label' }, o),
+          h('span', { class: 'ticket-balk' }, h('span', { style: `width:${(n[k] / max) * 100}%` })),
+          h('span', { class: 'ticket-aantal' }, String(n[k])))));
+    })),
+    h('div', { class: 'studio-knoppen' },
+      h('button', { class: 'knop rustig', type: 'button', onclick: () => { conn.send({ t: 'stoppen' }); } }, 'Klaar: studio sluiten')),
+  ));
 }
 
 // ---------- pause, errors, drawer ----------
 
 function pauzeScherm(reden) {
+  stopAftellen();
   screen = 'pauze';
   show(h('main', { class: 'studio-midden' },
     h('p', { class: 'studio-reus' }, '⏸️ Pauze'),
@@ -626,7 +726,7 @@ function drawer() {
       } }, '✕')))),
     wachtend.length ? null : h('p', { class: 'klein' }, 'Telefoon kwijt of nieuw tabblad? Zet binnenkomen aan, laat de leerling opnieuw meedoen, en kies "is eigenlijk…".'),
     h('label', { class: 'toelating' },
-      h('input', { type: 'checkbox', checked: game?.geluid !== false, onchange: e => { game.geluid = e.target.checked; } }), ' Geluid aan'),
+      h('input', { type: 'checkbox', checked: game?.geluid !== false, onchange: e => { game.geluid = e.target.checked; geluid.zetAan(e.target.checked); } }), ' Geluid en muziek aan'),
     h('button', { class: 'knop rustig', type: 'button', onclick: () => { if (confirm('De wedstrijd stoppen?')) conn.send({ t: 'stoppen' }); } }, 'Wedstrijd stoppen'),
   );
 }

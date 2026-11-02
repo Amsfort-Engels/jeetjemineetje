@@ -567,3 +567,44 @@ Vermoeden (niet bevestigd): het schoolnetwerk blokkeert WebSockets of `*.workers
    eigen tempo, munten of snacks, teamrace op het bord, chaosmomenten), Quizlet Live-stijl (teams, ieder heeft een
    deel van de antwoorden, samen praten), of een mix. Voorkeur bouwer: Gimkit-stijl met teams. **Keuze Els.**
    Muziek en exit-ticket gaan mee in het nieuwe concept.
+
+## 2026-11-02 — Wensen van Els gebouwd (vóór de les van morgen)
+
+Marieke: Els vraagt of haar wijzigingen er morgen in kunnen zitten. Afspraak: alles wat in één dag
+**getest** kan, nu. Het nieuwe spelconcept (Gimkit-stijl) niet: dat is een nieuw spel en gaat eerst als
+ontwerp langs fabel en Astra.
+
+### Gebouwd
+
+1. **Verbindingsdiagnose op de telefoon.** Na twee mislukte pogingen vraagt de telefoon de server via gewoon
+   HTTP (`GET /ping`, nieuw) of die bereikbaar is, en zegt dan in gewone woorden wat er mis is:
+   - server bereikbaar, live verbinding niet: "Dit netwerk blokkeert de live verbinding. Zet je wifi uit en gebruik 4G."
+   - server onbereikbaar: "Dit netwerk kan de wedstrijd niet bereiken. Zet je wifi uit en gebruik 4G."
+   De app blijft ondertussen proberen. Dit is een **noodoplossing**: de echte oorzaak (vermoedelijk blokkeert de
+   school-wifi WebSockets of `*.workers.dev`) is nog niet vastgesteld; de melding helpt daar morgen ook bij.
+2. **Luisterzin in de Wedstrijd** (vervangt "Welk woord hoor je?"): het bord leest de voorbeeldzin voor met een
+   piep op het gat, twee keer, dan opent het antwoordvenster. Telt voor de titel Luisterkampioen.
+3. **Lijkende afleiders bij luisteren in Oefenen**: de drie woorden uit het thema die er het meest op lijken
+   (bewerkingsafstand + gedeeld begin en eind). Bv. *afrijden → meerijden, rijles, wegrijden*,
+   *techniek → technisch, tegenkomen*.
+4. **Muziek en geluidseffecten op het bord** (`js/geluid.js`, Web Audio, geen bestanden, geen auteursrecht):
+   deuntje in de lobby, rustiger deuntje tijdens het antwoordvenster, tikken in de laatste 5 seconden, gong bij
+   de uitslag, tromgeroffel voor de Gouden Klomp en voor de winnaars, fanfare bij het podium. Stil tijdens
+   gesproken vragen. Uit te zetten in de lade ("Geluid en muziek aan").
+5. **Exit-ticket in de app**: na de finale drie vragen op de telefoon, één tegelijk, met een tik
+   (😀😐😕 · makkelijk/goed/moeilijk · luisteren/spelling/zinnen). Het bord toont live de totalen
+   ("6 van de 6 hebben alles ingevuld"). De relay telt alleen per antwoord; wie wat koos wordt nergens bewaard.
+   Pas na het ticket sluit de telefoon zijn verbinding en wist hij zijn gegevens.
+
+### Getest
+
+- 30 relaytests lokaal groen (2 nieuw: `/ping`, exit-ticket). 5 ook live groen.
+- Browser: volledig spel met 6 gesimuleerde telefoons → luisterzinvragen, herkansing, podium, exit-ticket
+  met totalen op het bord. Geen fouten.
+- Browser: diagnose in beide gevallen (live verbinding geblokkeerd / server onbereikbaar) met een tijdelijk
+  testpagina (verwijderd). Telefoon: vraag → uitslag → drie ticketvragen → "Dank je wel! 💚" → verbinding dicht.
+- **Niet getest:** het geluid zelf (de testbrowser speelt niets af), en echte telefoons op de school-wifi.
+  **Geen review door fabel en Astra** vóór morgen; graag achteraf.
+
+Relay opnieuw gedeployd (twee keer: tweede keer om het roombudget na de livetests te resetten).
+Service worker naar `v16`.
